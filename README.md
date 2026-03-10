@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/JuliaKnowledge/SemanticSpacetime.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaKnowledge/SemanticSpacetime.jl/actions/workflows/CI.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Julia port of the [SSTorytime](https://github.com/markburgess/SSTorytime) knowledge graph system, based on Semantic Spacetime (SST) — a theory of process-oriented knowledge representation. SemanticSpacetime.jl provides a typed, weighted graph database API backed by PostgreSQL for building, querying, and analysing knowledge maps.
+A Julia port of the [SSTorytime](https://github.com/markburgess/SSTorytime) knowledge graph system, based on Semantic Spacetime (SST) — a theory of process-oriented knowledge representation. SemanticSpacetime.jl provides a typed, weighted graph API with multiple storage backends — an in-memory store for lightweight use, and a portable SQL store via [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) supporting SQLite, DuckDB, PostgreSQL, and other compatible databases — for building, querying, and analysing knowledge maps.
 
 **SemanticSpacetime.jl is an independent knowledge graph based on Semantic Spacetime. It is not an RDF or Topic Maps project. It aims to be both easier to use and more powerful than RDF for representing process knowledge.**
 
@@ -25,18 +25,21 @@ pkg> add https://github.com/JuliaKnowledge/SemanticSpacetime.jl
 ```julia
 using SemanticSpacetime
 
-# Open a connection to the SST database (PostgreSQL)
-sst = open_sst()
+# Create an in-memory store (no database required)
+store = MemoryStore()
 
-# Create nodes (vertices)
-n1 = vertex!(sst, "Mary had a little lamb", "nursery rhymes")
-n2 = vertex!(sst, "Its fleece was white as snow", "nursery rhymes")
+# Create nodes and a link
+n1 = mem_vertex!(store, "Mary had a little lamb", "nursery rhymes")
+n2 = mem_vertex!(store, "Its fleece was white as snow", "nursery rhymes")
+mem_edge!(store, n1, "then", n2)
+```
 
-# Create a directed link (edge) between nodes
-edge!(sst, n1, "then", n2, String[], 1.0f0)
+For database-backed storage, load a backend extension:
 
-# Close the connection
-close_sst(sst)
+```julia
+using SemanticSpacetime, SQLite     # or: using SemanticSpacetime, DuckDB
+store = open_sqlite()               # in-memory SQLite (or open_duckdb())
+# store = open_sqlite("my.db")      # file-backed
 ```
 
 ## Features
@@ -47,7 +50,11 @@ close_sst(sst)
 | Arrow directory (named, typed relationships) | ✅ | `arrows.jl` |
 | Context registration and normalization | ✅ | `context.jl` |
 | In-memory node directory with n-gram bucketing | ✅ | `node_directory.jl` |
-| PostgreSQL database backend (LibPQ) | ✅ | `database.jl`, `schema.jl` |
+| In-memory store (no database required) | ✅ | `memory_store.jl` |
+| Portable SQL store via DBInterface.jl | ✅ | `db_store.jl` |
+| PostgreSQL backend (LibPQ) | ✅ | `database.jl`, `schema.jl` |
+| SQLite backend (extension) | ✅ | `ext/SQLiteExt.jl` |
+| DuckDB backend (extension) | ✅ | `ext/DuckDBExt.jl` |
 | Idempotent node and link operations | ✅ | `db_nodes.jl`, `db_links.jl` |
 | High-level Vertex/Edge/Hub API | ✅ | `api.jl` |
 | Database queries (nodes, chapters, contexts) | ✅ | `db_queries.jl` |
@@ -85,18 +92,25 @@ N4L is a lightweight markup language for entering knowledge as semi-structured n
 - `Node(text, chapter)` — A node with text content, chapter, and incidence lists
 - `Link(arr, wgt, ctx, dst)` — A typed, weighted, contextual edge
 - `ArrowEntry` — Arrow directory entry (stindex, long, short, ptr)
-- `SSTConnection` — Database connection wrapper
+- `SSTConnection` — PostgreSQL connection wrapper
+- `MemoryStore` — In-memory graph store (no database)
+- `DBStore` — Portable SQL store via DBInterface.jl
 
-### Database Lifecycle
+### Store Lifecycle
 
+- `MemoryStore()` — Create an in-memory store
+- `open_sqlite(path)` — Open a SQLite-backed store (requires `using SQLite`)
+- `open_duckdb(path)` — Open a DuckDB-backed store (requires `using DuckDB`)
 - `open_sst(; load_arrows, host, port)` — Open a PostgreSQL connection
-- `close_sst(sst)` — Close the connection
+- `close_sst(sst)` — Close a PostgreSQL connection
 - `configure!(sst)` — Create schema and optionally load arrows/contexts
 
 ### High-Level Graph API
 
-- `vertex!(sst, name, chapter)` — Create or retrieve a node
-- `edge!(sst, from, arrow, to, context, weight)` — Create a directed link
+- `mem_vertex!(store, name, chapter)` — Create or retrieve a node (in-memory)
+- `mem_edge!(store, from, arrow, to)` — Create a directed link (in-memory)
+- `vertex!(sst, name, chapter)` — Create or retrieve a node (database)
+- `edge!(sst, from, arrow, to, context, weight)` — Create a directed link (database)
 - `hub_join!(sst, name, chapter, from_ptrs, arrow, context, weights)` — Multi-link through a hub
 - `graph_to_db!(sst)` — Bulk upload in-memory graph to database
 
@@ -149,10 +163,18 @@ The following vignettes provide worked examples and in-depth guides. Each is ava
 
 ## Dependencies
 
-- [LibPQ.jl](https://github.com/iamed2/LibPQ.jl) — PostgreSQL connectivity
+Core:
+
+- [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) — Portable database abstraction
 - [JSON3.jl](https://github.com/quinnj/JSON3.jl) — JSON serialization
+- [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl) — Graph algorithms
 - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/) — Matrix operations (stdlib)
-- [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl) — Performance benchmarking
+
+Optional backends (loaded as extensions):
+
+- [SQLite.jl](https://github.com/JuliaDatabases/SQLite.jl) — SQLite backend
+- [DuckDB.jl](https://github.com/duckdb/duckdb-julia) — DuckDB backend
+- [LibPQ.jl](https://github.com/iamed2/LibPQ.jl) — PostgreSQL backend
 
 ## Related Projects
 
