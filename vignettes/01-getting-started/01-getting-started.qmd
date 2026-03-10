@@ -1,0 +1,178 @@
+---
+title: "Getting Started with SemanticSpacetime.jl"
+author: "Simon Frost"
+format:
+  html:
+    code-fold: false
+    self-contained: true
+  gfm:
+    code-fold: false
+  pdf:
+    code-fold: false
+engine: julia
+---
+
+## Introduction
+
+SemanticSpacetime.jl is a Julia implementation of the [Semantic Spacetime](https://markburgess.org/spacetime.html) (SST) knowledge graph framework, based on Mark Burgess's Promise Theory and spacetime process semantics. Unlike traditional knowledge graphs that store flat triples, SST classifies every relationship along a *spacetime spectrum* — from spatial proximity (NEAR) through causal ordering (LEADSTO) and containment (CONTAINS) to expressive properties (EXPRESS).
+
+This vignette walks through the basics: creating an in-memory graph, adding nodes and edges, and querying the store.
+
+## Loading the Package
+
+```{julia}
+using SemanticSpacetime
+```
+
+## Creating a MemoryStore
+
+The `MemoryStore` is an in-memory graph that requires no database. It is ideal for experimentation, testing, and lightweight applications.
+
+```{julia}
+store = MemoryStore()
+println("Nodes: $(node_count(store)), Links: $(link_count(store))")
+```
+
+## Registering Arrow Types
+
+Before adding edges, we must register the *arrow types* (relationship kinds) we plan to use. Each arrow belongs to one of the four SST types and has a direction (`"+"` for forward, `"-"` for inverse).
+
+```{julia}
+# Reset any previously registered arrows
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# LEADSTO arrows — causal / temporal ordering
+fwd = insert_arrow!("LEADSTO", "then", "leads to next", "+")
+bwd = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
+insert_inverse_arrow!(fwd, bwd)
+
+# CONTAINS arrows — membership / part-of
+has = insert_arrow!("CONTAINS", "has", "contains element", "+")
+partof = insert_arrow!("CONTAINS", "part-of", "is part of", "-")
+insert_inverse_arrow!(has, partof)
+
+# EXPRESS arrows — properties / attributes
+note_fwd = insert_arrow!("EXPRESS", "note", "has note", "+")
+
+# NEAR arrows — similarity / proximity
+like = insert_arrow!("NEAR", "like", "is similar to", "+")
+
+println("Arrows registered successfully.")
+```
+
+## Adding Nodes
+
+Nodes are created with `mem_vertex!`, which takes a store, a name (text label), and a chapter (section/topic grouping). Node creation is *idempotent* — adding the same name and chapter twice returns the existing node.
+
+```{julia}
+# Create nodes about a simple process
+boil = mem_vertex!(store, "boil water", "cooking")
+add_tea = mem_vertex!(store, "add tea leaves", "cooking")
+steep = mem_vertex!(store, "steep for 5 minutes", "cooking")
+pour = mem_vertex!(store, "pour into cup", "cooking")
+
+println("Created $(node_count(store)) nodes")
+println("Node: '$(boil.s)' in chapter '$(boil.chap)'")
+```
+
+Each node has a `NodePtr` — a two-part identifier consisting of a text-size class and an index. This bucketing by text length is a core SST design for efficient storage.
+
+```{julia}
+println("NodePtr for 'boil water': class=$(boil.nptr.class), index=$(boil.nptr.cptr)")
+```
+
+## Adding Edges
+
+Edges connect nodes with a named arrow type. The arrow name must match a registered arrow.
+
+```{julia}
+# Build a causal chain: boil → add tea → steep → pour
+mem_edge!(store, boil, "then", add_tea)
+mem_edge!(store, add_tea, "then", steep)
+mem_edge!(store, steep, "then", pour)
+
+println("Created $(link_count(store)) links")
+```
+
+Edges can also carry **context** (topic tags) and **weight** (numerical strength):
+
+```{julia}
+# Add a note with context
+tip = mem_vertex!(store, "use freshly drawn water", "cooking")
+mem_edge!(store, boil, "note", tip, ["tips", "quality"])
+
+# Add a similarity link with custom weight
+kettle = mem_vertex!(store, "heat water in kettle", "cooking")
+mem_edge!(store, boil, "like", kettle, String[], 0.9f0)
+
+println("Graph now has $(node_count(store)) nodes and $(link_count(store)) links")
+```
+
+## Querying the Store
+
+Look up nodes by name or search by text substring:
+
+```{julia}
+# Find nodes by exact name
+results = mem_get_nodes_by_name(store, "boil water")
+for n in results
+    println("Found: '$(n.s)' in chapter '$(n.chap)'")
+end
+```
+
+```{julia}
+# Search nodes by text substring
+matches = mem_search_text(store, "tea")
+for n in matches
+    println("Match: '$(n.s)'")
+end
+```
+
+```{julia}
+# List all chapters
+chapters = mem_get_chapters(store)
+println("Chapters: ", join(chapters, ", "))
+```
+
+## Retrieving a Node by Pointer
+
+If you have a `NodePtr`, you can retrieve the full node:
+
+```{julia}
+node = mem_get_node(store, boil.nptr)
+if node !== nothing
+    println("Retrieved: '$(node.s)'")
+end
+```
+
+## Inspecting Node Structure
+
+Every node has an *incidence list* organized into 7 channels corresponding to the signed STType spectrum (-EXPRESS to +EXPRESS). Let's inspect the links from our "boil water" node:
+
+```{julia}
+for (i, links) in enumerate(boil.incidence)
+    if !isempty(links)
+        println("Channel $i: $(length(links)) link(s)")
+        for link in links
+            dst = mem_get_node(store, link.dst)
+            arrow = get_arrow_by_ptr(link.arr)
+            if dst !== nothing
+                println("  → '$(dst.s)' via '$(arrow.short)'")
+            end
+        end
+    end
+end
+```
+
+## What's Next?
+
+This was a quick introduction to SemanticSpacetime.jl. Subsequent vignettes cover:
+
+- **SST Types** — the spacetime type system (NEAR, LEADSTO, CONTAINS, EXPRESS)
+- **Building Graphs** — modelling a real domain with chapters and contexts
+- **N4L Language** — the Notes for Learning markup for declarative graph construction
+- **Search & Discovery** — finding nodes and navigating the graph
+- **Graph Analysis** — centrality, sources, sinks, and loops
+- **Paths & Cones** — causal reasoning with forward/backward cones
+- **RDF Integration** — interoperating with the Semantic Web

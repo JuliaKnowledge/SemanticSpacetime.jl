@@ -1,0 +1,191 @@
+---
+title: "The SST Type System"
+author: "Simon Frost"
+format:
+  html:
+    code-fold: false
+    self-contained: true
+  gfm:
+    code-fold: false
+  pdf:
+    code-fold: false
+engine: julia
+---
+
+## Introduction
+
+Semantic Spacetime (SST) is built on the insight that *all* relationships between things can be classified along a single spacetime spectrum. Rather than an open-ended set of predicates (as in RDF), SST uses exactly four fundamental relationship types — each capturing a different aspect of how things relate in space and time.
+
+This vignette explains the SST type system and shows how arrow types map onto it.
+
+## The Four STTypes
+
+```{julia}
+using SemanticSpacetime
+```
+
+SST defines four fundamental relationship types as an enum:
+
+| STType | Value | Semantics | Examples |
+|--------|-------|-----------|----------|
+| `NEAR` | 0 | Similarity, proximity, spatial closeness | "looks like", "synonym", "near" |
+| `LEADSTO` | ±1 | Causality, temporal ordering, process flow | "then", "causes", "leads to" |
+| `CONTAINS` | ±2 | Membership, part-of, spatial containment | "has component", "contains", "part of" |
+| `EXPRESS` | ±3 | Properties, attributes, annotations | "has property", "note", "means" |
+
+The sign distinguishes **forward** (`+`) from **inverse** (`-`) directions. For example, "contains" is forward CONTAINS while "is part of" is inverse CONTAINS. Internally, this is represented across 7 channels (indices 1–7), centred on NEAR at index 4.
+
+## Spacetime Interpretation
+
+These four types arise from physics-inspired reasoning about spacetime:
+
+- **NEAR** (spatial) — Things that are *close together* in some space. Proximity, similarity, and co-location. This is the most spatial relationship.
+- **LEADSTO** (temporal) — Things connected by *process* or *time*. One event leads to another. This captures causality and sequence.
+- **CONTAINS** (boundary) — Things separated by a *boundary*. One thing is inside another. Containers, sets, regions.
+- **EXPRESS** (property) — Things that *describe* or *annotate* other things. Attributes, names, metadata.
+
+This classification is exhaustive — every relationship you can think of maps onto one of these four types.
+
+## Registering Arrows by Type
+
+Each arrow (relationship name) is registered under one of the four STTypes. Let's register a comprehensive set:
+
+```{julia}
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# NEAR — similarity and proximity
+like = insert_arrow!("NEAR", "like", "is similar to", "+")
+synonym = insert_arrow!("NEAR", "syn", "is a synonym of", "+")
+compare = insert_arrow!("NEAR", "compare", "compare to", "+")
+
+# LEADSTO — causal and temporal
+then_fwd = insert_arrow!("LEADSTO", "then", "leads to next", "+")
+then_bwd = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
+insert_inverse_arrow!(then_fwd, then_bwd)
+
+causes_fwd = insert_arrow!("LEADSTO", "causes", "causes to happen", "+")
+causes_bwd = insert_arrow!("LEADSTO", "caused-by", "is caused by", "-")
+insert_inverse_arrow!(causes_fwd, causes_bwd)
+
+# CONTAINS — membership and containment
+has_fwd = insert_arrow!("CONTAINS", "has", "contains element", "+")
+has_bwd = insert_arrow!("CONTAINS", "in", "is element of", "-")
+insert_inverse_arrow!(has_fwd, has_bwd)
+
+part_fwd = insert_arrow!("CONTAINS", "has-part", "has a part", "+")
+part_bwd = insert_arrow!("CONTAINS", "part-of", "is a part of", "-")
+insert_inverse_arrow!(part_fwd, part_bwd)
+
+# EXPRESS — properties and annotation
+note_arr = insert_arrow!("EXPRESS", "note", "has note/remark", "+")
+eg_arr = insert_arrow!("EXPRESS", "e.g.", "has example", "+")
+means_arr = insert_arrow!("EXPRESS", "means", "means or expresses", "+")
+
+println("Registered arrows across all four STTypes.")
+```
+
+## Inspecting Arrow Metadata
+
+Each registered arrow carries its STType information:
+
+```{julia}
+for name in ["then", "has", "like", "note"]
+    entry = get_arrow_by_name(name)
+    if entry !== nothing
+        label = SemanticSpacetime.print_stindex(entry.stindex)
+        println("Arrow '$(entry.short)' → STType: $label (stindex=$(entry.stindex))")
+    end
+end
+```
+
+## Building a Typed Graph
+
+Let's build a small graph that uses all four relationship types to model a biological cell:
+
+```{julia}
+store = MemoryStore()
+
+# Nodes
+cell = mem_vertex!(store, "eukaryotic cell", "biology")
+nucleus = mem_vertex!(store, "nucleus", "biology")
+mitochondria = mem_vertex!(store, "mitochondria", "biology")
+dna = mem_vertex!(store, "DNA", "biology")
+atp = mem_vertex!(store, "ATP production", "biology")
+respiration = mem_vertex!(store, "cellular respiration", "biology")
+prokaryote = mem_vertex!(store, "prokaryotic cell", "biology")
+powerhouse = mem_vertex!(store, "powerhouse of the cell", "biology")
+
+# CONTAINS — structural hierarchy
+mem_edge!(store, cell, "has", nucleus)
+mem_edge!(store, cell, "has", mitochondria)
+mem_edge!(store, nucleus, "has", dna)
+
+# LEADSTO — causal processes
+mem_edge!(store, respiration, "then", atp)
+mem_edge!(store, mitochondria, "causes", atp)
+
+# EXPRESS — properties and annotations
+mem_edge!(store, mitochondria, "note", powerhouse)
+mem_edge!(store, atp, "e.g.", mem_vertex!(store, "36 ATP molecules per glucose", "biology"))
+
+# NEAR — similarity
+mem_edge!(store, cell, "like", prokaryote)
+
+println("Graph: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+## The ETC Classification
+
+SST also classifies *nodes* into three categories based on their relationship patterns:
+
+- **Event (E)** — Something that happens; typically a source of LEADSTO links
+- **Thing (T)** — A persistent object; typically involved in CONTAINS links
+- **Concept (C)** — An abstract idea; typically a target of EXPRESS links
+
+The `infer_etc` function examines a node's incidence pattern to determine its ETC classification:
+
+```{julia}
+for node in [cell, respiration, powerhouse]
+    etc = infer_etc(node)
+    label = show_psi(etc)
+    println("'$(node.s)' → ETC: $label")
+end
+```
+
+## The Seven Channels
+
+Internally, each node maintains 7 incidence channels indexed 1–7. These correspond to the signed STType spectrum:
+
+| Channel | STType | Direction |
+|---------|--------|-----------|
+| 1 | -EXPRESS | Inverse property |
+| 2 | -CONTAINS | "Is part of" |
+| 3 | -LEADSTO | "Is caused by" |
+| 4 | NEAR | Similarity (undirected) |
+| 5 | +LEADSTO | "Causes" |
+| 6 | +CONTAINS | "Contains" |
+| 7 | +EXPRESS | "Has property" |
+
+```{julia}
+channel_names = ["-EXPRESS", "-CONTAINS", "-LEADSTO", "NEAR",
+                 "+LEADSTO", "+CONTAINS", "+EXPRESS"]
+
+println("Incidence channels for 'eukaryotic cell':")
+for (i, links) in enumerate(cell.incidence)
+    if !isempty(links)
+        println("  Channel $i ($(channel_names[i])): $(length(links)) link(s)")
+    end
+end
+```
+
+## Why This Matters
+
+The SST type system provides several advantages over unconstrained knowledge graphs:
+
+1. **Semantic reasoning** — Knowing that an edge is LEADSTO (causal) vs CONTAINS (structural) enables different inference strategies.
+2. **Cone search** — Forward/backward causal cones only follow LEADSTO edges, giving you directed causal reasoning for free.
+3. **ETC validation** — The type system can detect inconsistencies (e.g., a "thing" that is also a source of causal edges).
+4. **Dimensional reduction** — Seven channels are far fewer than thousands of arbitrary predicates, making graph algorithms more tractable.
+
+The subsequent vignettes build on this type system for search, analysis, and reasoning.

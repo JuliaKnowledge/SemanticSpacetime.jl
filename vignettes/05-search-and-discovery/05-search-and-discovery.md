@@ -1,0 +1,294 @@
+# Search and Discovery
+Simon Frost
+
+## Introduction
+
+Once a knowledge graph is populated, we need to *find things* in it.
+SemanticSpacetime.jl provides several search mechanisms — from exact
+name lookup to text substring matching and context-filtered search with
+inhibition. This vignette demonstrates these capabilities.
+
+## Building a Sample Graph
+
+Let’s build a graph about a software ecosystem to search through:
+
+``` julia
+using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Register arrows
+then_f = insert_arrow!("LEADSTO", "then", "leads to", "+")
+then_b = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
+insert_inverse_arrow!(then_f, then_b)
+has_f = insert_arrow!("CONTAINS", "has", "contains", "+")
+has_b = insert_arrow!("CONTAINS", "in", "is in", "-")
+insert_inverse_arrow!(has_f, has_b)
+note_arr = insert_arrow!("EXPRESS", "note", "has note", "+")
+eg_arr = insert_arrow!("EXPRESS", "e.g.", "has example", "+")
+like_arr = insert_arrow!("NEAR", "like", "is similar to", "+")
+
+store = MemoryStore()
+
+# Languages chapter
+julia = mem_vertex!(store, "Julia language", "languages")
+python = mem_vertex!(store, "Python language", "languages")
+rust = mem_vertex!(store, "Rust language", "languages")
+go_lang = mem_vertex!(store, "Go language", "languages")
+mem_edge!(store, julia, "like", python, ["scientific-computing"])
+mem_edge!(store, rust, "like", go_lang, ["systems-programming"])
+
+# Packages chapter
+flux = mem_vertex!(store, "Flux.jl machine learning", "packages")
+plots = mem_vertex!(store, "Plots.jl visualization", "packages")
+dataframes = mem_vertex!(store, "DataFrames.jl tabular data", "packages")
+http = mem_vertex!(store, "HTTP.jl web server", "packages")
+mem_edge!(store, julia, "has", flux, ["machine-learning"])
+mem_edge!(store, julia, "has", plots, ["visualization"])
+mem_edge!(store, julia, "has", dataframes, ["data-science"])
+mem_edge!(store, julia, "has", http, ["web"])
+
+# Concepts chapter
+jit = mem_vertex!(store, "just-in-time compilation", "concepts")
+gc = mem_vertex!(store, "garbage collection", "concepts")
+dispatch = mem_vertex!(store, "multiple dispatch", "concepts")
+mem_edge!(store, julia, "note", jit, ["compiler"])
+mem_edge!(store, julia, "note", dispatch, ["type-system"])
+mem_edge!(store, python, "note", gc, ["runtime"])
+mem_edge!(store, go_lang, "note", gc, ["runtime"])
+
+# Workflows chapter
+train = mem_vertex!(store, "train model", "workflows")
+evaluate = mem_vertex!(store, "evaluate model", "workflows")
+deploy = mem_vertex!(store, "deploy model", "workflows")
+mem_edge!(store, train, "then", evaluate, ["ml-pipeline"])
+mem_edge!(store, evaluate, "then", deploy, ["ml-pipeline"])
+mem_edge!(store, flux, "note", train, ["machine-learning"])
+
+println("Graph: $(node_count(store)) nodes, $(link_count(store)) links")
+println("Chapters: ", join(sort(mem_get_chapters(store)), ", "))
+```
+
+    Graph: 14 nodes, 19 links
+    Chapters: concepts, languages, packages, workflows
+
+## Exact Name Lookup
+
+The simplest search — find nodes by their exact name:
+
+``` julia
+results = mem_get_nodes_by_name(store, "Julia language")
+for n in results
+    println("Found: '$(n.s)' in chapter '$(n.chap)'")
+end
+```
+
+    Found: 'Julia language' in chapter 'languages'
+
+``` julia
+# Non-existent name returns empty
+results = mem_get_nodes_by_name(store, "nonexistent")
+println("Found $(length(results)) results for 'nonexistent'")
+```
+
+    Found 0 results for 'nonexistent'
+
+## Text Substring Search
+
+`mem_search_text` finds nodes whose text contains the query as a
+substring (case-insensitive):
+
+``` julia
+println("Search for 'language':")
+for n in mem_search_text(store, "language")
+    println("  '$(n.s)' [$(n.chap)]")
+end
+```
+
+    Search for 'language':
+      'Rust language' [languages]
+      'Go language' [languages]
+      'Python language' [languages]
+      'Julia language' [languages]
+
+``` julia
+println("Search for 'model':")
+for n in mem_search_text(store, "model")
+    println("  '$(n.s)' [$(n.chap)]")
+end
+```
+
+    Search for 'model':
+      'evaluate model' [workflows]
+      'deploy model' [workflows]
+      'train model' [workflows]
+
+``` julia
+println("Search for 'jl':")
+for n in mem_search_text(store, "jl")
+    println("  '$(n.s)' [$(n.chap)]")
+end
+```
+
+    Search for 'jl':
+      'HTTP.jl web server' [packages]
+      'DataFrames.jl tabular data' [packages]
+      'Plots.jl visualization' [packages]
+      'Flux.jl machine learning' [packages]
+
+## Search with Inhibition Context
+
+Inhibition contexts allow you to filter search results by including or
+excluding specific context tags. This is inspired by Promise Theory’s
+notion of *conditional promises* — you see only what is relevant to your
+current perspective.
+
+``` julia
+# Parse an inhibition context: include "machine-learning", exclude nothing
+ic_ml = parse_inhibition_context("machine-learning")
+println("Include: $(ic_ml.include)")
+println("Exclude: $(ic_ml.exclude)")
+```
+
+    Include: ["machine-learning"]
+    Exclude: String[]
+
+``` julia
+# Search with the inhibition context
+results = search_with_inhibition(store, "Julia", ic_ml)
+println("Results for 'Julia' in machine-learning context:")
+for n in results
+    println("  '$(n.s)' [$(n.chap)]")
+end
+```
+
+    Results for 'Julia' in machine-learning context:
+      'Julia language' [languages]
+
+``` julia
+# Exclude a context: include "runtime", exclude "compiler"
+ic_runtime = parse_inhibition_context("runtime NOT compiler")
+println("Include: $(ic_runtime.include)")
+println("Exclude: $(ic_runtime.exclude)")
+```
+
+    Include: ["runtime"]
+    Exclude: ["compiler"]
+
+## Checking Inhibition Matches
+
+The `matches_inhibition` function checks whether a context string
+satisfies an inhibition filter:
+
+``` julia
+ic = parse_inhibition_context("web,data-science NOT machine-learning")
+
+# Test various context strings
+for ctx in ["web", "data-science", "machine-learning", "web,visualization", "machine-learning,web"]
+    match = matches_inhibition(ctx, ic)
+    println("  '$ctx' matches: $match")
+end
+```
+
+      'web' matches: false
+      'data-science' matches: false
+      'machine-learning' matches: false
+      'web,visualization' matches: false
+      'machine-learning,web' matches: false
+
+## Decoding Search Parameters
+
+The `decode_search_field` function parses a natural-language search
+query into structured parameters:
+
+``` julia
+sp = SemanticSpacetime.decode_search_field("sequence about gravity in physics limit 10")
+println("Names: $(sp.names)")
+println("Chapter: $(sp.chapter)")
+println("Sequence only: $(sp.seq_only)")
+println("Limit: $(sp.limit)")
+```
+
+    Names: ["gravity"]
+    Chapter: physics
+    Sequence only: true
+    Limit: 10
+
+``` julia
+sp2 = SemanticSpacetime.decode_search_field("machine learning")
+println("Names: $(sp2.names)")
+```
+
+    Names: ["machine", "learning"]
+
+## Navigating from Search Results
+
+Search results return `Node` objects, which carry their full incidence
+structure. You can follow links from any search result:
+
+``` julia
+# Find Julia and explore its connections
+julia_nodes = mem_get_nodes_by_name(store, "Julia language")
+if !isempty(julia_nodes)
+    julia_node = julia_nodes[1]
+    println("Connections from '$(julia_node.s)':")
+
+    channel_names = ["-EXPRESS", "-CONTAINS", "-LEADSTO", "NEAR",
+                     "+LEADSTO", "+CONTAINS", "+EXPRESS"]
+    for (i, links) in enumerate(julia_node.incidence)
+        for link in links
+            dst = mem_get_node(store, link.dst)
+            arr = get_arrow_by_ptr(link.arr)
+            if dst !== nothing
+                println("  [$(channel_names[i])] —($(arr.short))→ '$(dst.s)'")
+            end
+        end
+    end
+end
+```
+
+    Connections from 'Julia language':
+      [NEAR] —(like)→ 'Python language'
+      [+CONTAINS] —(has)→ 'Flux.jl machine learning'
+      [+CONTAINS] —(has)→ 'Plots.jl visualization'
+      [+CONTAINS] —(has)→ 'DataFrames.jl tabular data'
+      [+CONTAINS] —(has)→ 'HTTP.jl web server'
+      [+EXPRESS] —(note)→ 'just-in-time compilation'
+      [+EXPRESS] —(note)→ 'multiple dispatch'
+
+## Searching Across Chapters
+
+Since `mem_search_text` searches across all chapters, you can discover
+cross-domain connections:
+
+``` julia
+println("Nodes mentioning 'compilation' or 'collection':")
+for query in ["compilation", "collection", "dispatch"]
+    results = mem_search_text(store, query)
+    for n in results
+        println("  '$(n.s)' [$(n.chap)]")
+    end
+end
+```
+
+    Nodes mentioning 'compilation' or 'collection':
+      'just-in-time compilation' [concepts]
+      'garbage collection' [concepts]
+      'multiple dispatch' [concepts]
+
+## Summary
+
+SemanticSpacetime.jl provides multiple search strategies:
+
+| Method                     | Use Case                             |
+|----------------------------|--------------------------------------|
+| `mem_get_nodes_by_name`    | Exact name lookup                    |
+| `mem_search_text`          | Substring matching across all nodes  |
+| `search_with_inhibition`   | Context-filtered search              |
+| `parse_inhibition_context` | Parse include/exclude filter strings |
+| `decode_search_field`      | Natural-language query parsing       |
+
+The combination of text search and context-based inhibition gives you
+both broad discovery and focused, perspective-aware queries — a key
+feature of the SST approach to knowledge management.

@@ -1,0 +1,269 @@
+---
+title: "Maze Solving with Graph Paths"
+author: "Simon Frost"
+format:
+  html:
+    code-fold: false
+    self-contained: true
+  gfm:
+    code-fold: false
+  pdf:
+    code-fold: false
+engine: julia
+---
+
+## Introduction
+
+Mazes are a classic test bed for graph path-finding algorithms. In SST, a maze becomes a directed graph where corridors are LEADSTO edges and intersections are nodes. This vignette builds a larger maze than the Go API example, solves it using forward/backward cone collision, and compares weighted and unweighted path finding.
+
+## Setup
+
+```{julia}
+using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+fwd_f = insert_arrow!("LEADSTO", "fwd", "forward link", "+")
+fwd_b = insert_arrow!("LEADSTO", "bwd", "backward link", "-")
+insert_inverse_arrow!(fwd_f, fwd_b)
+
+println("Maze arrows registered.")
+```
+
+## Building the Maze
+
+We construct a 10×10 grid maze with corridors defined as edges between named cells. The maze has multiple paths from the start (top-left) to the goal (bottom-right), with dead ends and loops.
+
+```{julia}
+store = MemoryStore()
+
+# Helper to create a corridor edge
+function corridor!(store, from::String, to::String, weight::Float32=1.0f0)
+    nfrom = mem_vertex!(store, from, "maze")
+    nto = mem_vertex!(store, to, "maze")
+    mem_edge!(store, nfrom, "fwd", nto, String[], weight)
+end
+
+# Define maze corridors as (row, col) pairs
+# Main path (long winding route)
+corridor!(store, "r1c1", "r1c2")
+corridor!(store, "r1c2", "r1c3")
+corridor!(store, "r1c3", "r2c3")
+corridor!(store, "r2c3", "r2c4")
+corridor!(store, "r2c4", "r2c5")
+corridor!(store, "r2c5", "r3c5")
+corridor!(store, "r3c5", "r3c6")
+corridor!(store, "r3c6", "r4c6")
+corridor!(store, "r4c6", "r4c7")
+corridor!(store, "r4c7", "r5c7")
+corridor!(store, "r5c7", "r5c8")
+corridor!(store, "r5c8", "r6c8")
+corridor!(store, "r6c8", "r6c9")
+corridor!(store, "r6c9", "r7c9")
+corridor!(store, "r7c9", "r7c10")
+corridor!(store, "r7c10", "r8c10")
+corridor!(store, "r8c10", "r9c10")
+corridor!(store, "r9c10", "r10c10")
+
+# Shortcut path (fewer hops, higher weight = "easier")
+corridor!(store, "r1c1", "r2c1", 2.0f0)
+corridor!(store, "r2c1", "r3c1", 2.0f0)
+corridor!(store, "r3c1", "r3c2", 2.0f0)
+corridor!(store, "r3c2", "r4c2", 2.0f0)
+corridor!(store, "r4c2", "r5c2", 2.0f0)
+corridor!(store, "r5c2", "r5c3", 2.0f0)
+corridor!(store, "r5c3", "r6c3", 2.0f0)
+corridor!(store, "r6c3", "r6c4", 2.0f0)
+corridor!(store, "r6c4", "r7c4", 2.0f0)
+corridor!(store, "r7c4", "r7c5", 2.0f0)
+corridor!(store, "r7c5", "r8c5", 2.0f0)
+corridor!(store, "r8c5", "r8c6", 2.0f0)
+corridor!(store, "r8c6", "r9c6", 2.0f0)
+corridor!(store, "r9c6", "r9c7", 2.0f0)
+corridor!(store, "r9c7", "r10c7", 2.0f0)
+corridor!(store, "r10c7", "r10c8", 2.0f0)
+corridor!(store, "r10c8", "r10c9", 2.0f0)
+corridor!(store, "r10c9", "r10c10", 2.0f0)
+
+# Cross-connections (creating alternative routes)
+corridor!(store, "r2c5", "r2c6")
+corridor!(store, "r2c6", "r3c6")
+corridor!(store, "r5c3", "r5c4")
+corridor!(store, "r5c4", "r5c5")
+corridor!(store, "r5c5", "r5c6")
+corridor!(store, "r5c6", "r5c7")
+
+# Dead-end branches
+corridor!(store, "r1c3", "r1c4")
+corridor!(store, "r1c4", "r1c5")
+corridor!(store, "r4c7", "r4c8")
+corridor!(store, "r4c8", "r4c9")
+
+# Loop (creating a cycle)
+corridor!(store, "r3c5", "r3c4")
+corridor!(store, "r3c4", "r2c4")
+
+println("Maze: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+## Visualising with Adjacency Matrix
+
+Build the adjacency matrix to see the maze structure:
+
+```{julia}
+adj = SemanticSpacetime.AdjacencyMatrix()
+for (nptr, node) in store.nodes
+    for links in node.incidence
+        for link in links
+            arr = get_arrow_by_ptr(link.arr)
+            if arr.short == "fwd"
+                SemanticSpacetime.add_edge!(adj, nptr, link.dst, Float64(link.wgt))
+            end
+        end
+    end
+end
+
+println(graph_summary(adj))
+```
+
+```{julia}
+sources = find_sources(adj)
+sinks = find_sinks(adj)
+println("Entry points (sources): $(length(sources))")
+for nptr in sources
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  '$(node.s)'")
+    end
+end
+println("Dead ends (sinks): $(length(sinks))")
+for nptr in sinks
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  '$(node.s)'")
+    end
+end
+```
+
+## Solving with Forward/Backward Cone Collision
+
+Explore from both ends and find where the cones overlap:
+
+```{julia}
+start_nodes = mem_get_nodes_by_name(store, "r1c1")
+goal_nodes = mem_get_nodes_by_name(store, "r10c10")
+
+if !isempty(start_nodes) && !isempty(goal_nodes)
+    start_nptr = start_nodes[1].nptr
+    goal_nptr = goal_nodes[1].nptr
+
+    # Expand cones at increasing depth
+    for d in [5, 10, 15, 20]
+        fwd = forward_cone(store, start_nptr; depth=d)
+        bwd = backward_cone(store, goal_nptr; depth=d)
+        fwd_set = Set(fwd.supernodes)
+        bwd_set = Set(bwd.supernodes)
+        overlap = intersect(fwd_set, bwd_set)
+        println("Depth $d: fwd=$(length(fwd.supernodes)), bwd=$(length(bwd.supernodes)), overlap=$(length(overlap))")
+    end
+end
+```
+
+## Path Finding with Loop Detection
+
+```{julia}
+if !isempty(start_nodes) && !isempty(goal_nodes)
+    result = find_paths(store, start_nptr, goal_nptr; max_depth=25)
+
+    println("Solutions: $(length(result.paths)) DAG paths, $(length(result.loops)) loop paths")
+
+    for (i, path) in enumerate(result.paths)
+        names = [mem_get_node(store, p).s for p in path if mem_get_node(store, p) !== nothing]
+        println("  Path $i ($(length(names)) steps): $(names[1]) → ... → $(names[end])")
+    end
+
+    if !isempty(result.loops)
+        println("\nLoop corrections:")
+        for (i, path) in enumerate(result.loops[1:min(3, length(result.loops))])
+            names = [mem_get_node(store, p).s for p in path if mem_get_node(store, p) !== nothing]
+            println("  Loop $i ($(length(names)) steps): $(names[1]) → ... → $(names[end])")
+        end
+    end
+end
+```
+
+## Weighted vs Unweighted Paths with Dijkstra
+
+The shortcut path has higher weights (2.0), meaning Dijkstra treats it as "shorter" distance (distance = 1/weight):
+
+```{julia}
+if !isempty(start_nodes) && !isempty(goal_nodes)
+    dpath = dijkstra_path(store, start_nptr, goal_nptr)
+    if dpath !== nothing
+        names = [mem_get_node(store, nptr).s for nptr in dpath.nodes if mem_get_node(store, nptr) !== nothing]
+        println("Dijkstra shortest path ($(length(names)) steps, weight=$(round(dpath.total_weight, digits=2))):")
+        println("  ", join(names, " → "))
+    else
+        println("No Dijkstra path found")
+    end
+end
+```
+
+## Weighted Search: All Reachable Paths Ranked
+
+```{julia}
+if !isempty(start_nodes)
+    paths = weighted_search(store, start_nptr; max_depth=5, min_weight=0.0f0)
+    println("Weighted search from start (depth 5): $(length(paths)) paths found")
+
+    ranked = rank_by_weight(paths; ascending=false)
+    println("\nTop 5 highest-weight paths:")
+    for wp in ranked[1:min(5, length(ranked))]
+        names = [mem_get_node(store, nptr).s for nptr in wp.nodes if mem_get_node(store, nptr) !== nothing]
+        println("  Weight $(round(wp.total_weight, digits=1)): ", join(names, " → "))
+    end
+
+    println("\nTop 5 lowest-weight paths:")
+    ranked_asc = rank_by_weight(paths; ascending=true)
+    for wp in ranked_asc[1:min(5, length(ranked_asc))]
+        names = [mem_get_node(store, nptr).s for nptr in wp.nodes if mem_get_node(store, nptr) !== nothing]
+        println("  Weight $(round(wp.total_weight, digits=1)): ", join(names, " → "))
+    end
+end
+```
+
+## Loop Detection
+
+Check the maze for cycles using the adjacency matrix:
+
+```{julia}
+cycles = detect_loops(adj)
+println("Cycles detected: $(length(cycles))")
+for (i, cycle) in enumerate(cycles)
+    names = String[]
+    for nptr in cycle
+        node = mem_get_node(store, nptr)
+        if node !== nothing
+            push!(names, node.s)
+        end
+    end
+    println("  Cycle $i: ", join(names, " → "))
+end
+```
+
+## Summary
+
+Maze solving demonstrates SST's path-finding capabilities:
+
+| Technique | Function | Use Case |
+|-----------|----------|----------|
+| Forward cone | `forward_cone(store, start; depth=d)` | Explore reachable cells |
+| Backward cone | `backward_cone(store, goal; depth=d)` | Find cells that reach the goal |
+| Cone collision | `intersect(fwd_set, bwd_set)` | Identify corridor overlap |
+| Path solving | `find_paths(store, start, goal)` | Find all solutions |
+| Loop detection | `detect_loops(adj)` | Find cycles in the maze |
+| Dijkstra | `dijkstra_path(store, start, goal)` | Shortest weighted path |
+| Weighted search | `weighted_search(store, start)` | Rank paths by weight |
+
+Higher-weighted corridors represent "easier" paths, and Dijkstra preferentially selects them (distance = 1/weight).

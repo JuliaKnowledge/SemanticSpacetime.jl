@@ -1,0 +1,221 @@
+---
+title: "Promise Theory with SST"
+author: "Simon Frost"
+format:
+  html:
+    code-fold: false
+    self-contained: true
+  gfm:
+    code-fold: false
+  pdf:
+    code-fold: false
+engine: julia
+---
+
+## Introduction
+
+Semantic Spacetime is deeply rooted in Mark Burgess's **Promise Theory** — a framework for modelling autonomous agents and their voluntary commitments. In Promise Theory, an agent makes a *promise* to another agent about some behaviour (the *body*), and the recipient may or may not *accept* or *use* that promise. This vignette shows how SST's four spacetime types map to promise semantics and how to build promise-theoretic models.
+
+## Setup
+
+```{julia}
+using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Causal arrows — promises lead to outcomes
+then_f = insert_arrow!("LEADSTO", "then", "leads to", "+")
+then_b = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
+insert_inverse_arrow!(then_f, then_b)
+
+promises_f = insert_arrow!("LEADSTO", "promises", "promises to", "+")
+promises_b = insert_arrow!("LEADSTO", "promised-by", "is promised by", "-")
+insert_inverse_arrow!(promises_f, promises_b)
+
+# Containment arrows — agents belong to domains
+has_f = insert_arrow!("CONTAINS", "has", "contains", "+")
+has_b = insert_arrow!("CONTAINS", "in", "is in", "-")
+insert_inverse_arrow!(has_f, has_b)
+
+# EXPRESS arrows — promise body and attributes
+note_arr = insert_arrow!("EXPRESS", "note", "has note", "+")
+body_arr = insert_arrow!("EXPRESS", "body", "has body", "+")
+
+# NEAR arrows — similar agents or promises
+like_arr = insert_arrow!("NEAR", "like", "is similar to", "+")
+
+store = MemoryStore()
+println("Arrows registered for Promise Theory modelling.")
+```
+
+## The Four STTypes as Promise Semantics
+
+SST's type system maps naturally to promise-theoretic concepts:
+
+| STType | Promise Semantics | Example |
+|--------|------------------|---------|
+| **LEADSTO** | Causal promises — agent A promises outcome B | "Server promises uptime" |
+| **CONTAINS** | Structural membership — agent belongs to a group | "Service belongs to cluster" |
+| **EXPRESS** | Information — promise body, attributes, descriptions | "Promise body: deliver 99.9% SLA" |
+| **NEAR** | Similarity — agents with comparable capabilities | "Server1 is similar to Server2" |
+
+```{julia}
+# Model a simple promise: Web Server promises to serve HTTP to Client
+server = mem_vertex!(store, "Web Server", "infrastructure")
+client = mem_vertex!(store, "Client Browser", "infrastructure")
+http_promise = mem_vertex!(store, "serve HTTP requests", "promises")
+
+# The server promises behaviour to the client (LEADSTO)
+mem_edge!(store, server, "promises", client, ["http", "service"])
+
+# The promise body describes what is promised (EXPRESS)
+mem_edge!(store, server, "body", http_promise, ["http"])
+mem_edge!(store, http_promise, "note", mem_vertex!(store, "respond within 200ms", "promises"))
+
+println("Basic promise: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+## Building a Promise Theory Graph
+
+Let's model a microservice architecture where services make promises to each other:
+
+```{julia}
+# Agents (services)
+auth_svc = mem_vertex!(store, "Auth Service", "services")
+api_gw = mem_vertex!(store, "API Gateway", "services")
+db_svc = mem_vertex!(store, "Database Service", "services")
+cache_svc = mem_vertex!(store, "Cache Service", "services")
+monitor = mem_vertex!(store, "Monitoring Agent", "services")
+
+# Promise bodies
+auth_body = mem_vertex!(store, "authenticate users via JWT", "promises")
+api_body = mem_vertex!(store, "route and rate-limit requests", "promises")
+db_body = mem_vertex!(store, "persist data with ACID guarantees", "promises")
+cache_body = mem_vertex!(store, "cache responses for 60 seconds", "promises")
+monitor_body = mem_vertex!(store, "collect and alert on metrics", "promises")
+
+# Causal promises between services (LEADSTO)
+mem_edge!(store, api_gw, "promises", auth_svc, ["authentication"])
+mem_edge!(store, auth_svc, "promises", api_gw, ["tokens"])
+mem_edge!(store, api_gw, "promises", client, ["http", "api"])
+mem_edge!(store, db_svc, "promises", auth_svc, ["storage"])
+mem_edge!(store, cache_svc, "promises", api_gw, ["performance"])
+mem_edge!(store, monitor, "promises", api_gw, ["observability"])
+mem_edge!(store, monitor, "promises", auth_svc, ["observability"])
+mem_edge!(store, monitor, "promises", db_svc, ["observability"])
+
+# Promise bodies (EXPRESS)
+mem_edge!(store, auth_svc, "body", auth_body)
+mem_edge!(store, api_gw, "body", api_body)
+mem_edge!(store, db_svc, "body", db_body)
+mem_edge!(store, cache_svc, "body", cache_body)
+mem_edge!(store, monitor, "body", monitor_body)
+
+# Structural containment — services belong to a cluster (CONTAINS)
+cluster = mem_vertex!(store, "Production Cluster", "infrastructure")
+for svc in [auth_svc, api_gw, db_svc, cache_svc, monitor]
+    mem_edge!(store, cluster, "has", svc, ["production"])
+end
+
+# Similarity between stateless services (NEAR)
+mem_edge!(store, auth_svc, "like", api_gw, ["stateless"])
+mem_edge!(store, cache_svc, "like", api_gw, ["stateless"])
+
+println("Microservice graph: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+## Context Scoping for Interaction Domains
+
+In Promise Theory, the same agent may make different promises in different contexts. SST's context tags separate these domains:
+
+```{julia}
+# The API Gateway makes different promises in different contexts
+mem_edge!(store, api_gw, "promises",
+    mem_vertex!(store, "external clients", "users"), ["external", "public"])
+mem_edge!(store, api_gw, "promises",
+    mem_vertex!(store, "internal services", "users"), ["internal", "private"])
+mem_edge!(store, api_gw, "note",
+    mem_vertex!(store, "public API: rate-limited to 100 req/min", "promises"), ["external"])
+mem_edge!(store, api_gw, "note",
+    mem_vertex!(store, "internal API: unlimited rate", "promises"), ["internal"])
+
+println("Context-scoped promises added")
+```
+
+Use inhibition context to filter by domain:
+
+```{julia}
+# Search for promises in the "external" context
+ic_external = parse_inhibition_context("external")
+results = search_with_inhibition(store, "API", ic_external)
+println("External API context:")
+for n in results
+    println("  '$(n.s)' [$(n.chap)]")
+end
+```
+
+## Searching for Promises by Agent
+
+Find all promises made by a specific agent by tracing its forward cone:
+
+```{julia}
+# What does the Monitoring Agent promise?
+cone = forward_cone(store, monitor.nptr; depth=2)
+println("Monitoring Agent's promise cone:")
+for nptr in cone.supernodes
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  → '$(node.s)'")
+    end
+end
+```
+
+```{julia}
+# What leads to the Auth Service? (Who promises to it?)
+bwd = backward_cone(store, auth_svc.nptr; depth=2)
+println("Who promises to Auth Service?")
+for nptr in bwd.supernodes
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  ← '$(node.s)'")
+    end
+end
+```
+
+## Structural Analysis of the Promise Graph
+
+```{julia}
+adj = SemanticSpacetime.AdjacencyMatrix()
+for (nptr, node) in store.nodes
+    for links in node.incidence
+        for link in links
+            SemanticSpacetime.add_edge!(adj, nptr, link.dst, Float64(link.wgt))
+        end
+    end
+end
+
+centrality = eigenvector_centrality(adj; max_iter=100, tol=1e-6)
+ranked = sort(collect(centrality), by=x -> x.second, rev=true)
+
+println("Most central agents in the promise network:")
+for (nptr, score) in ranked[1:min(8, length(ranked))]
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  $(rpad(node.s, 30)) $(round(score, digits=4))")
+    end
+end
+```
+
+## Summary
+
+Promise Theory and SST share a common foundation:
+
+1. **Autonomous agents** → SST nodes with chapter-scoped identity
+2. **Promises (causal)** → LEADSTO edges between agents
+3. **Promise bodies (information)** → EXPRESS edges describing what is promised
+4. **Group membership** → CONTAINS edges for structural organisation
+5. **Agent similarity** → NEAR edges for comparable capabilities
+6. **Interaction domains** → Context tags for scoping promises
+
+This mapping makes SST a natural computational framework for Promise Theory analysis, enabling causal reasoning (cones), structural analysis (centrality), and perspective-aware search (inhibition contexts).

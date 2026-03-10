@@ -1,0 +1,321 @@
+# Paths and Causal Cones
+Simon Frost
+
+## Introduction
+
+One of the most powerful features of Semantic Spacetime is *causal
+reasoning* through the graph. Because SST classifies edges by type
+(NEAR, LEADSTO, CONTAINS, EXPRESS), it can follow directed causal chains
+to answer questions like “what does X lead to?” and “what caused Y?”.
+This is done through **cone search** (forward and backward causal cones)
+and **path solving** (finding routes between two nodes).
+
+The terminology comes from physics: in spacetime, a *light cone* defines
+the set of events that can causally influence (or be influenced by) a
+given event. SST applies the same idea to knowledge graphs.
+
+## Setup
+
+``` julia
+using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Register arrows
+then_f = insert_arrow!("LEADSTO", "then", "leads to", "+")
+then_b = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
+insert_inverse_arrow!(then_f, then_b)
+
+causes_f = insert_arrow!("LEADSTO", "causes", "causes", "+")
+causes_b = insert_arrow!("LEADSTO", "caused-by", "caused by", "-")
+insert_inverse_arrow!(causes_f, causes_b)
+
+has_f = insert_arrow!("CONTAINS", "has", "contains", "+")
+has_b = insert_arrow!("CONTAINS", "in", "is in", "-")
+insert_inverse_arrow!(has_f, has_b)
+
+note_arr = insert_arrow!("EXPRESS", "note", "has note", "+")
+like_arr = insert_arrow!("NEAR", "like", "is similar to", "+")
+
+store = MemoryStore()
+```
+
+    MemoryStore
+      Nodes:    0
+      Links:    0
+      Chapters: 
+
+## Building a Causal Graph
+
+Let’s model a chain of events — a simplified epidemic timeline:
+
+``` julia
+# Event chain
+spillover = mem_vertex!(store, "zoonotic spillover", "timeline")
+first_cases = mem_vertex!(store, "first human cases", "timeline")
+local_spread = mem_vertex!(store, "local transmission", "timeline")
+detection = mem_vertex!(store, "outbreak detection", "timeline")
+response = mem_vertex!(store, "public health response", "timeline")
+containment = mem_vertex!(store, "containment measures", "timeline")
+decline = mem_vertex!(store, "case decline", "timeline")
+endemic = mem_vertex!(store, "endemic equilibrium", "timeline")
+
+# Main causal chain
+mem_edge!(store, spillover, "then", first_cases)
+mem_edge!(store, first_cases, "then", local_spread)
+mem_edge!(store, local_spread, "then", detection)
+mem_edge!(store, detection, "then", response)
+mem_edge!(store, response, "then", containment)
+mem_edge!(store, containment, "then", decline)
+mem_edge!(store, decline, "then", endemic)
+
+# Branching causes
+superspreader = mem_vertex!(store, "superspreader event", "timeline")
+travel = mem_vertex!(store, "international travel", "timeline")
+mem_edge!(store, local_spread, "causes", superspreader)
+mem_edge!(store, superspreader, "causes", travel)
+mem_edge!(store, travel, "causes", mem_vertex!(store, "global spread", "timeline"))
+
+# Response branches
+vaccination = mem_vertex!(store, "vaccination campaign", "timeline")
+lockdown = mem_vertex!(store, "lockdown", "timeline")
+mem_edge!(store, response, "then", vaccination)
+mem_edge!(store, response, "then", lockdown)
+mem_edge!(store, vaccination, "causes", decline)
+mem_edge!(store, lockdown, "causes", decline)
+
+println("Causal graph: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+    Causal graph: 13 nodes, 28 links
+
+## Forward Cone Search
+
+The **forward cone** finds everything that a given node *leads to* — its
+causal future. Starting from “zoonotic spillover”, what consequences
+unfold?
+
+``` julia
+cone = forward_cone(store, spillover.nptr; depth=5)
+
+println("Forward cone from 'zoonotic spillover':")
+println("  Paths found: $(length(cone.paths))")
+println("  Supernodes: $(length(cone.supernodes))")
+
+# Show the supernodes (key nodes encountered)
+for nptr in cone.supernodes
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  → '$(node.s)'")
+    end
+end
+```
+
+    Forward cone from 'zoonotic spillover':
+      Paths found: 10
+      Supernodes: 6
+      → 'local transmission'
+      → 'outbreak detection'
+      → 'superspreader event'
+      → 'international travel'
+      → 'first human cases'
+      → 'public health response'
+
+## Backward Cone Search
+
+The **backward cone** finds everything that *leads to* a given node —
+its causal past. What caused “case decline”?
+
+``` julia
+cone_bwd = backward_cone(store, decline.nptr; depth=5)
+
+println("Backward cone from 'case decline':")
+println("  Paths found: $(length(cone_bwd.paths))")
+
+for nptr in cone_bwd.supernodes
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  ← '$(node.s)'")
+    end
+end
+```
+
+    Backward cone from 'case decline':
+      Paths found: 15
+      ← 'lockdown'
+      ← 'local transmission'
+      ← 'outbreak detection'
+      ← 'containment measures'
+      ← 'vaccination campaign'
+      ← 'first human cases'
+      ← 'public health response'
+
+## Controlling Cone Depth
+
+The `depth` parameter controls how many hops the cone search follows. A
+smaller depth gives a more focused view:
+
+``` julia
+for d in [1, 2, 3, 5]
+    cone_d = forward_cone(store, spillover.nptr; depth=d)
+    println("Depth $d: $(length(cone_d.supernodes)) supernodes")
+end
+```
+
+    Depth 1: 0 supernodes
+    Depth 2: 1 supernodes
+    Depth 3: 2 supernodes
+    Depth 5: 6 supernodes
+
+## Path Solving
+
+While cone search explores all reachable nodes, **path solving** finds
+specific routes between two given nodes:
+
+``` julia
+result = find_paths(store, spillover.nptr, decline.nptr; max_depth=10)
+
+println("Paths from 'zoonotic spillover' to 'case decline':")
+println("  Found: $(length(result.paths)) path(s)")
+
+for (i, path) in enumerate(result.paths)
+    names = String[]
+    for nptr in path
+        node = mem_get_node(store, nptr)
+        if node !== nothing
+            push!(names, node.s)
+        end
+    end
+    println("  Path $i: ", join(names, " → "))
+end
+```
+
+    Paths from 'zoonotic spillover' to 'case decline':
+      Found: 3 path(s)
+      Path 1: zoonotic spillover → first human cases → local transmission → outbreak detection → public health response → containment measures → case decline
+      Path 2: zoonotic spillover → first human cases → local transmission → outbreak detection → public health response → vaccination campaign → case decline
+      Path 3: zoonotic spillover → first human cases → local transmission → outbreak detection → public health response → lockdown → case decline
+
+``` julia
+# Check for loops in the paths
+println("Loops detected: $(length(result.loops))")
+```
+
+    Loops detected: 0
+
+## Weighted Paths with Dijkstra
+
+When edges carry weights, we can find the *shortest weighted path* using
+Dijkstra’s algorithm:
+
+``` julia
+# Add weighted edges for a cost analysis
+cost_store = MemoryStore()
+
+a = mem_vertex!(cost_store, "start", "costs")
+b = mem_vertex!(cost_store, "route A", "costs")
+c = mem_vertex!(cost_store, "route B", "costs")
+d = mem_vertex!(cost_store, "route C", "costs")
+e = mem_vertex!(cost_store, "end", "costs")
+
+# Different-cost routes
+mem_edge!(cost_store, a, "then", b, String[], 1.0f0)
+mem_edge!(cost_store, a, "then", c, String[], 5.0f0)
+mem_edge!(cost_store, b, "then", d, String[], 2.0f0)
+mem_edge!(cost_store, c, "then", e, String[], 1.0f0)
+mem_edge!(cost_store, d, "then", e, String[], 3.0f0)
+
+# Find cheapest path
+path = dijkstra_path(cost_store, a.nptr, e.nptr)
+if path !== nothing
+    names = [mem_get_node(cost_store, nptr).s for nptr in path.nodes]
+    println("Cheapest path: ", join(names, " → "))
+    println("Total weight: $(path.total_weight)")
+end
+```
+
+    Cheapest path: start → route B → end
+    Total weight: 6.0
+
+## Weighted Search and Ranking
+
+`weighted_search` explores outward from a node, collecting all reachable
+paths with their cumulative weights. `rank_by_weight` then sorts them:
+
+``` julia
+paths = weighted_search(cost_store, a.nptr; max_depth=3, min_weight=0.0f0)
+println("Weighted search from 'start': $(length(paths)) paths found")
+
+ranked = rank_by_weight(paths; ascending=true)
+for wp in ranked
+    names = [mem_get_node(cost_store, nptr).s for nptr in wp.nodes]
+    println("  Weight $(wp.total_weight): ", join(names, " → "))
+end
+```
+
+    Weighted search from 'start': 6 paths found
+      Weight 1.0: start → route A
+      Weight 3.0: start → route A → route C
+      Weight 5.0: start → route B
+      Weight 6.0: start → route B → end
+      Weight 6.0: start → route A → route C → end
+      Weight 9.0: start → route B → end → route C
+
+## Combining Cones with Path Solving
+
+A powerful pattern is to use cone search for *discovery* and then path
+solving for *explanation*:
+
+``` julia
+# Discover: what does "local transmission" lead to?
+fwd = forward_cone(store, local_spread.nptr; depth=4)
+
+println("Forward cone from 'local transmission':")
+for nptr in fwd.supernodes
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println("  → '$(node.s)'")
+    end
+end
+
+# Explain: how does "local transmission" lead to "endemic equilibrium"?
+explanation = find_paths(store, local_spread.nptr, endemic.nptr; max_depth=8)
+println("\nPaths to 'endemic equilibrium':")
+for (i, path) in enumerate(explanation.paths)
+    names = [mem_get_node(store, nptr).s for nptr in path if mem_get_node(store, nptr) !== nothing]
+    println("  Path $i: ", join(names, " → "))
+end
+```
+
+    Forward cone from 'local transmission':
+      → 'lockdown'
+      → 'outbreak detection'
+      → 'containment measures'
+      → 'case decline'
+      → 'superspreader event'
+      → 'international travel'
+      → 'vaccination campaign'
+      → 'public health response'
+
+    Paths to 'endemic equilibrium':
+      Path 1: local transmission → outbreak detection → public health response → containment measures → case decline → endemic equilibrium
+      Path 2: local transmission → outbreak detection → public health response → vaccination campaign → case decline → endemic equilibrium
+      Path 3: local transmission → outbreak detection → public health response → lockdown → case decline → endemic equilibrium
+
+## Summary
+
+Causal reasoning in SST uses two complementary tools:
+
+| Tool              | Question Answered                            |
+|-------------------|----------------------------------------------|
+| `forward_cone`    | “What does X lead to?” (causal future)       |
+| `backward_cone`   | “What caused X?” (causal past)               |
+| `find_paths`      | “How does X connect to Y?” (specific routes) |
+| `dijkstra_path`   | “What is the cheapest path from X to Y?”     |
+| `weighted_search` | “What is reachable from X, ranked by cost?”  |
+| `rank_by_weight`  | Sort weighted paths by total weight          |
+
+These are the SST analogues of light cones from physics — they define
+the causal structure of your knowledge graph, enabling directed,
+type-aware reasoning that flat triple stores cannot provide.

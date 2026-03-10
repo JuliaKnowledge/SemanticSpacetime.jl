@@ -1,0 +1,923 @@
+---
+title: "Ecological Causal Inference with DAGs"
+author: "Simon Frost"
+subtitle: "Encoding structural causal models in SemanticSpacetime.jl, inspired by Arif & MacNeil (2023)"
+format:
+  html:
+    code-fold: false
+    self-contained: true
+  gfm:
+    code-fold: false
+  pdf:
+    code-fold: false
+engine: julia
+---
+
+## Introduction
+
+Causal inference from observational data is a central challenge in
+ecology. Arif & MacNeil (2023, *Ecological Monographs*, **93**(1),
+e1554) introduced the **Structural Causal Model (SCM)** framework —
+widely used in epidemiology and social sciences — to ecology, showing
+how **Directed Acyclic Graphs (DAGs)** make causal assumptions
+explicit and guide correct statistical adjustment.
+
+This vignette demonstrates how **SemanticSpacetime.jl** can represent
+and reason about ecological SCMs. SST's typed arrow system provides a
+natural mapping:
+
+| SCM Concept | SST Arrow Type | Example |
+|---|---|---|
+| Direct causal effect (X → Y) | LEADSTO (`then`, `leads to`) | Nutrients → Algal cover |
+| Structural containment / taxonomy | CONTAINS (`contain`, `has-pt`) | Ecosystem ⊃ Coral reef |
+| Measured property / annotation | EXPRESS (`note`, `data`) | Temperature = 28°C |
+| Proximity / similarity | NEAR (`ll`, `syn`) | Site A ≈ Site B |
+
+We build three progressively complex ecological DAGs from the paper's
+framework — confounding, mediation with overcontrol, and collider
+bias — then use SST graph traversal to identify backdoor paths,
+valid adjustment sets, and causal versus non-causal pathways.
+
+### Reference
+
+> Arif, S. & MacNeil, M.A. (2023). Applying the structural causal
+> model framework for observational causal inference in ecology.
+> *Ecological Monographs*, 93(1), e1554.
+> [doi:10.1002/ecm.1554](https://doi.org/10.1002/ecm.1554)
+
+```{julia}
+using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+add_mandatory_arrows!()
+
+config_dir = let d = joinpath(@__DIR__, "..", "..", "..", "SSTorytime", "SSTconfig")
+    isdir(d) ? d : nothing
+end
+if config_dir !== nothing
+    st = SemanticSpacetime.N4LState()
+    for cf in read_config_files(config_dir)
+        SemanticSpacetime.parse_config_file(cf; st=st)
+    end
+end
+
+store = MemoryStore()
+println("SemanticSpacetime.jl ecological causal inference vignette")
+println("Arrows loaded: config_dir=$(config_dir !== nothing ? "yes" : "no")")
+```
+
+## 1. Coral Reef Ecosystem — The Domain Ontology
+
+Before building DAGs, we establish the ecological domain. A coral reef
+ecosystem has biotic components (corals, macroalgae, herbivorous fish),
+abiotic drivers (temperature, nutrients, light), and human pressures
+(fishing, land-use). In SST, **CONTAINS** arrows capture this
+hierarchical structure.
+
+```{julia}
+# ── Ecosystem hierarchy ──────────────────────────────
+ecosystem = mem_vertex!(store, "Coral Reef Ecosystem", "ecosystem")
+
+# Biotic components
+biotic    = mem_vertex!(store, "Biotic Components", "ecosystem")
+corals    = mem_vertex!(store, "Hard Coral Cover",  "biotic")
+macroalgae = mem_vertex!(store, "Macroalgal Cover", "biotic")
+herbivores = mem_vertex!(store, "Herbivorous Fish Biomass", "biotic")
+turf      = mem_vertex!(store, "Turf Algae Cover",  "biotic")
+cca       = mem_vertex!(store, "Crustose Coralline Algae", "biotic")
+predators = mem_vertex!(store, "Piscivore Biomass", "biotic")
+
+mem_edge!(store, ecosystem, "contain", biotic)
+for comp in [corals, macroalgae, herbivores, turf, cca, predators]
+    mem_edge!(store, biotic, "contain", comp)
+end
+
+# Abiotic drivers
+abiotic   = mem_vertex!(store, "Abiotic Drivers", "ecosystem")
+temp      = mem_vertex!(store, "Sea Surface Temperature (SST)", "abiotic")
+nutrients = mem_vertex!(store, "Dissolved Inorganic Nutrients", "abiotic")
+light     = mem_vertex!(store, "Photosynthetically Active Radiation", "abiotic")
+depth     = mem_vertex!(store, "Reef Depth", "abiotic")
+wave      = mem_vertex!(store, "Wave Exposure", "abiotic")
+
+mem_edge!(store, ecosystem, "contain", abiotic)
+for drv in [temp, nutrients, light, depth, wave]
+    mem_edge!(store, abiotic, "contain", drv)
+end
+
+# Human pressures
+human     = mem_vertex!(store, "Anthropogenic Pressures", "ecosystem")
+fishing   = mem_vertex!(store, "Fishing Pressure", "human pressures")
+runoff    = mem_vertex!(store, "Land-based Runoff", "human pressures")
+tourism   = mem_vertex!(store, "Tourism Impact",    "human pressures")
+climate   = mem_vertex!(store, "Climate Change",    "human pressures")
+
+mem_edge!(store, ecosystem, "contain", human)
+for prs in [fishing, runoff, tourism, climate]
+    mem_edge!(store, human, "contain", prs)
+end
+
+# Ecosystem states (outcomes)
+states    = mem_vertex!(store, "Ecosystem States", "ecosystem")
+coral_dom = mem_vertex!(store, "Coral-dominated State", "states")
+algal_dom = mem_vertex!(store, "Algal-dominated State", "states")
+regime_shift = mem_vertex!(store, "Regime Shift", "states")
+
+mem_edge!(store, ecosystem, "contain", states)
+for st in [coral_dom, algal_dom, regime_shift]
+    mem_edge!(store, states, "contain", st)
+end
+
+println("Domain ontology: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+### Annotating variables with measurement properties
+
+In the SCM framework, variables have types (continuous, categorical)
+and observability status (measured, unmeasured/latent). We use
+**EXPRESS** arrows to annotate these properties.
+
+```{julia}
+# Variable metadata via EXPRESS arrows
+variable_meta = [
+    (corals,     "Measured: % benthic cover, continuous"),
+    (macroalgae, "Measured: % benthic cover, continuous"),
+    (herbivores, "Measured: kg/ha, continuous"),
+    (temp,       "Measured: °C, continuous"),
+    (nutrients,  "Measured: μmol/L, continuous"),
+    (fishing,    "Measured: boats/km², continuous"),
+    (runoff,     "Estimated: proxy via land-use, semi-quantitative"),
+    (depth,      "Measured: metres, continuous"),
+    (predators,  "Measured: kg/ha, continuous"),
+]
+
+for (node, desc) in variable_meta
+    meta = mem_vertex!(store, desc, "variable metadata")
+    mem_edge!(store, node, "note", meta)
+end
+
+println("Variable annotations added")
+```
+
+## 2. DAG 1 — Confounding: Does Herbivory Protect Coral?
+
+The central ecological question: **What is the causal effect of
+herbivorous fish biomass on hard coral cover?**
+
+A naïve regression of coral cover on herbivore biomass might show a
+positive association. But **sea surface temperature** (SST) affects
+*both* herbivore biomass (warm waters support more fish) *and* coral
+cover (thermal stress bleaches corals). If we fail to adjust for
+temperature, our estimate is confounded.
+
+### DAG structure
+
+```
+     Temperature
+      /       \
+     v         v
+Herbivores → Coral Cover
+```
+
+In SST, causal arrows are **LEADSTO**:
+
+```{julia}
+# ── DAG 1: Confounding ──────────────────────────────
+dag1 = mem_vertex!(store, "DAG 1: Confounding", "causal models")
+dag1_desc = mem_vertex!(store,
+    "Research question: What is the causal effect of herbivore " *
+    "biomass on coral cover? Confounder: sea surface temperature.",
+    "model descriptions")
+mem_edge!(store, dag1, "note", dag1_desc)
+
+# Causal arrows (LEADSTO)
+mem_edge!(store, temp, "then", herbivores)   # T → H
+mem_edge!(store, temp, "then", corals)       # T → C  (thermal stress)
+mem_edge!(store, herbivores, "then", corals) # H → C  (grazing algae → space for coral)
+
+# Tag edges to this DAG
+mem_edge!(store, dag1, "contain", temp)
+mem_edge!(store, dag1, "contain", herbivores)
+mem_edge!(store, dag1, "contain", corals)
+
+println("DAG 1 built: Temperature confounds Herbivores → Coral Cover")
+```
+
+### Identifying backdoor paths
+
+A **backdoor path** from Herbivores to Coral Cover is any path that
+starts with an arrow *into* Herbivores. Here: Herbivores ← Temperature
+→ Coral Cover. We can find this using SST's path-finding and cone
+search.
+
+```{julia}
+# Forward cone from Temperature — shows everything T causally affects
+cone_temp = forward_cone(store, temp.nptr; depth=2)
+println("Forward cone from Temperature:")
+seen = Set{NodePtr}()
+for path in cone_temp.paths
+    for lnk in path
+        lnk.dst in seen && continue
+        push!(seen, lnk.dst)
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing && println("  → $(n.s) [$(n.chap)]")
+    end
+end
+```
+
+```{julia}
+# Backward cone from Coral Cover — what causally influences coral?
+cone_coral = backward_cone(store, corals.nptr; depth=2)
+println("Backward cone into Coral Cover:")
+seen2 = Set{NodePtr}()
+for path in cone_coral.paths
+    for lnk in path
+        lnk.dst in seen2 && continue
+        push!(seen2, lnk.dst)
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing && println("  ← $(n.s) [$(n.chap)]")
+    end
+end
+```
+
+```{julia}
+# Find paths from Herbivores to Coral (should include direct path)
+pr = find_paths(store, herbivores.nptr, corals.nptr; max_depth=5)
+println("Paths from Herbivores → Coral Cover: $(length(pr.paths))")
+for (i, path) in enumerate(pr.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : "?" end
+             for np in path]
+    println("  Path $i: $(join(names, " → "))")
+end
+```
+
+### The adjustment set
+
+The **backdoor criterion** says: to estimate H → C, block all
+backdoor paths. The only backdoor path is H ← T → C. Conditioning
+on Temperature blocks it. We represent this finding as metadata.
+
+```{julia}
+# Record the adjustment set as a property of the DAG model
+adj1 = mem_vertex!(store, "Adjustment set: {Temperature}", "adjustment sets")
+mem_edge!(store, dag1, "has-pt", adj1)
+
+# Record the identified bias
+bias1 = mem_vertex!(store, "Confounding bias via Temperature", "bias types")
+mem_edge!(store, dag1, "note", bias1)
+
+println("DAG 1 analysis complete:")
+println("  Exposure: Herbivorous Fish Biomass")
+println("  Outcome:  Hard Coral Cover")
+println("  Confounder: Sea Surface Temperature")
+println("  Adjustment set: {Temperature}")
+```
+
+## 3. DAG 2 — Mediation and Overcontrol Bias
+
+Now we extend the model. Herbivores don't directly affect coral cover;
+they **reduce macroalgal cover**, which in turn **competes with corals**
+for space. Macroalgae is a **mediator** on the causal pathway.
+
+### DAG structure
+
+```
+     Temperature
+      /       \
+     v         v
+Herbivores → Macroalgae → Coral Cover
+                 ^
+                 |
+             Nutrients
+```
+
+If we adjust for the mediator (macroalgae), we **block the causal
+pathway** we're trying to estimate — this is **overcontrol bias**.
+
+```{julia}
+# ── DAG 2: Mediation & Overcontrol ──────────────────
+dag2 = mem_vertex!(store, "DAG 2: Mediation & Overcontrol", "causal models")
+dag2_desc = mem_vertex!(store,
+    "Research question: Same as DAG 1, but herbivory acts through " *
+    "macroalgae reduction (mediator). Adjusting for macroalgae " *
+    "blocks the causal pathway (overcontrol bias).",
+    "model descriptions")
+mem_edge!(store, dag2, "note", dag2_desc)
+
+# Additional causal arrows
+mem_edge!(store, herbivores, "then", macroalgae)  # H → M  (grazing reduces algae)
+mem_edge!(store, macroalgae, "then", corals)      # M → C  (competition for space)
+mem_edge!(store, nutrients, "then", macroalgae)    # N → M  (eutrophication)
+mem_edge!(store, nutrients, "then", corals)        # N → C  (direct nutrient stress)
+
+mem_edge!(store, dag2, "contain", herbivores)
+mem_edge!(store, dag2, "contain", macroalgae)
+mem_edge!(store, dag2, "contain", corals)
+mem_edge!(store, dag2, "contain", temp)
+mem_edge!(store, dag2, "contain", nutrients)
+
+println("DAG 2 built: Herbivores → Macroalgae → Coral Cover")
+```
+
+### Tracing causal pathways
+
+```{julia}
+# The causal chain: Herbivores → Macroalgae → Coral
+pr2a = find_paths(store, herbivores.nptr, macroalgae.nptr; max_depth=3)
+pr2b = find_paths(store, macroalgae.nptr, corals.nptr; max_depth=3)
+
+println("Herbivores → Macroalgae paths: $(length(pr2a.paths))")
+for (i, p) in enumerate(pr2a.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : "?" end for np in p]
+    println("  $i: $(join(names, " → "))")
+end
+
+println("Macroalgae → Coral Cover paths: $(length(pr2b.paths))")
+for (i, p) in enumerate(pr2b.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : "?" end for np in p]
+    println("  $i: $(join(names, " → "))")
+end
+```
+
+```{julia}
+# Full causal paths from Herbivores to Coral Cover (through the mediator)
+pr2_full = find_paths(store, herbivores.nptr, corals.nptr; max_depth=5)
+println("All paths Herbivores → Coral Cover: $(length(pr2_full.paths))")
+for (i, p) in enumerate(pr2_full.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : "?" end for np in p]
+    println("  $i: $(join(names, " → "))")
+end
+```
+
+### Correct vs incorrect adjustment
+
+```{julia}
+# DAG 2 adjustment analysis
+adj2_correct = mem_vertex!(store,
+    "Correct adjustment set: {Temperature} — blocks confounding, preserves mediation",
+    "adjustment sets")
+adj2_wrong = mem_vertex!(store,
+    "WRONG adjustment: {Temperature, Macroalgae} — overcontrol bias, " *
+    "blocks the causal pathway H → M → C",
+    "adjustment sets")
+
+mem_edge!(store, dag2, "has-pt", adj2_correct)
+mem_edge!(store, dag2, "has-pt", adj2_wrong)
+
+bias2 = mem_vertex!(store, "Overcontrol bias via conditioning on mediator", "bias types")
+mem_edge!(store, dag2, "note", bias2)
+
+println("DAG 2 analysis:")
+println("  ✓ Correct: adjust for {Temperature}")
+println("  ✗ Wrong:   adjust for {Temperature, Macroalgae} (overcontrol!)")
+println("  Reason: Macroalgae is on the causal pathway H → M → C")
+```
+
+## 4. DAG 3 — Collider Bias: The Fishing Paradox
+
+A more subtle bias. Suppose we study the effect of nutrients on coral
+cover. Both **nutrients** and **wave exposure** independently affect
+**reef structural complexity** (a collider). If we condition on
+structural complexity, we open a spurious path between nutrients and
+wave exposure — and since wave exposure affects coral cover, this
+creates **collider bias**.
+
+### DAG structure
+
+```
+Nutrients ──────────→ Coral Cover
+    \                     ^
+     \                    |
+      v                   |
+  Structural Complexity   |
+      ^                   |
+     /                    |
+    /                     |
+Wave Exposure ───────────┘
+```
+
+Structural complexity is a **collider** on the path
+Nutrients → Structural Complexity ← Wave Exposure.
+
+```{julia}
+# ── DAG 3: Collider Bias ────────────────────────────
+dag3 = mem_vertex!(store, "DAG 3: Collider Bias", "causal models")
+dag3_desc = mem_vertex!(store,
+    "Research question: What is the causal effect of nutrient " *
+    "enrichment on coral cover? Structural complexity is a collider " *
+    "influenced by both nutrients and wave exposure. Conditioning " *
+    "on it induces spurious association.",
+    "model descriptions")
+mem_edge!(store, dag3, "note", dag3_desc)
+
+# New variable
+complexity = mem_vertex!(store, "Reef Structural Complexity", "biotic")
+
+# Causal arrows
+mem_edge!(store, nutrients, "then", complexity)   # N → SC
+mem_edge!(store, wave, "then", complexity)        # W → SC (collider!)
+mem_edge!(store, wave, "then", corals)            # W → C
+# nutrients → corals already exists from DAG 2
+
+mem_edge!(store, dag3, "contain", nutrients)
+mem_edge!(store, dag3, "contain", wave)
+mem_edge!(store, dag3, "contain", complexity)
+mem_edge!(store, dag3, "contain", corals)
+
+println("DAG 3 built: Nutrients → Coral Cover with collider (Structural Complexity)")
+```
+
+### Identifying the collider
+
+A **collider** is a node with two or more arrows pointing *into* it
+from different paths. We can detect this by examining the backward cone.
+
+```{julia}
+# Backward cone into Structural Complexity
+cone_sc = backward_cone(store, complexity.nptr; depth=1)
+parents = Set{String}()
+for path in cone_sc.paths
+    for lnk in path
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing && push!(parents, n.s)
+    end
+end
+println("Parents of Structural Complexity (potential collider parents):")
+for p in parents
+    println("  ← $p")
+end
+if length(parents) >= 2
+    println("⚠  Structural Complexity is a COLLIDER — conditioning on it is dangerous!")
+end
+```
+
+### Correct adjustment
+
+```{julia}
+adj3_correct = mem_vertex!(store,
+    "Correct adjustment set: {} (empty) — no confounders to block",
+    "adjustment sets")
+adj3_wrong = mem_vertex!(store,
+    "WRONG adjustment: {Structural Complexity} — collider bias, opens " *
+    "Nutrients → SC ← Wave → Coral spurious path",
+    "adjustment sets")
+
+mem_edge!(store, dag3, "has-pt", adj3_correct)
+mem_edge!(store, dag3, "has-pt", adj3_wrong)
+
+bias3 = mem_vertex!(store, "Collider bias via conditioning on Structural Complexity", "bias types")
+mem_edge!(store, dag3, "note", bias3)
+
+println("DAG 3 analysis:")
+println("  ✓ Correct: adjust for {} (nothing)")
+println("  ✗ Wrong:   adjust for {Structural Complexity} (collider bias!)")
+```
+
+## 5. DAG 4 — Frontdoor Criterion: Unobserved Confounding
+
+The most challenging scenario. Suppose **Fishing Pressure** affects
+both **Herbivore Biomass** and **Coral Cover** (via reef destruction),
+but fishing is **unobserved** (no reliable data). The backdoor
+criterion fails. However, if we observe the **mediator** (macroalgae)
+and it satisfies certain conditions, the **frontdoor criterion**
+allows identification of the causal effect.
+
+### DAG structure
+
+```
+  Fishing (Unobserved)
+      /         \
+     v           v
+Herbivores → Macroalgae → Coral Cover
+```
+
+```{julia}
+# ── DAG 4: Frontdoor Criterion ──────────────────────
+dag4 = mem_vertex!(store, "DAG 4: Frontdoor Criterion", "causal models")
+dag4_desc = mem_vertex!(store,
+    "Research question: Estimate the causal effect of herbivory on coral " *
+    "when fishing pressure (unobserved confounder) affects both. " *
+    "The frontdoor criterion via macroalgae can identify the effect.",
+    "model descriptions")
+mem_edge!(store, dag4, "note", dag4_desc)
+
+# Mark fishing as unobserved
+fishing_latent = mem_vertex!(store, "Unmeasured: no reliable fishing data", "variable metadata")
+mem_edge!(store, fishing, "note", fishing_latent)
+
+# Causal arrows (some already exist)
+mem_edge!(store, fishing, "then", herbivores)  # F → H
+mem_edge!(store, fishing, "then", corals)      # F → C (direct reef destruction)
+
+mem_edge!(store, dag4, "contain", fishing)
+mem_edge!(store, dag4, "contain", herbivores)
+mem_edge!(store, dag4, "contain", macroalgae)
+mem_edge!(store, dag4, "contain", corals)
+
+println("DAG 4 built: Unobserved fishing confounds Herbivores → Coral")
+```
+
+### Frontdoor analysis
+
+The frontdoor criterion requires:
+1. The mediator (Macroalgae) fully captures the effect of Herbivores on Coral
+2. No unblocked backdoor path from Herbivores to Macroalgae
+3. All backdoor paths from Macroalgae to Coral are blocked by Herbivores
+
+```{julia}
+# Check path structure for frontdoor conditions
+println("Frontdoor criterion analysis:")
+println("─"^50)
+
+# Condition 1: H → M path exists and captures the effect
+pr4a = find_paths(store, herbivores.nptr, macroalgae.nptr; max_depth=3)
+println("1. H → M paths: $(length(pr4a.paths))")
+for p in pr4a.paths
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : "?" end for np in p]
+    println("   $(join(names, " → "))")
+end
+
+# Condition 2: Check backdoor paths into Macroalgae (not through H)
+cone_macro_back = backward_cone(store, macroalgae.nptr; depth=2)
+macro_parents = Set{String}()
+for path in cone_macro_back.paths
+    for lnk in path
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing && push!(macro_parents, n.s)
+    end
+end
+println("2. Causes of Macroalgae: $(collect(macro_parents))")
+
+# Condition 3: M → C path
+pr4b = find_paths(store, macroalgae.nptr, corals.nptr; max_depth=3)
+println("3. M → C paths: $(length(pr4b.paths))")
+for p in pr4b.paths
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : "?" end for np in p]
+    println("   $(join(names, " → "))")
+end
+
+adj4 = mem_vertex!(store,
+    "Frontdoor identification via Macroalgae: " *
+    "P(C|do(H)) = Σ_M P(M|H) Σ_H' P(C|M,H') P(H')",
+    "adjustment sets")
+mem_edge!(store, dag4, "has-pt", adj4)
+
+println("\n✓ Frontdoor criterion applicable via Macroalgae mediator")
+```
+
+## 6. Seychelles Reef Case Study
+
+Arif & MacNeil (2023) drew inspiration from real-world coral reef
+studies, particularly regime shifts in the Seychelles following the
+1998 mass bleaching event. Let us build a concrete case study.
+
+```{julia}
+# ── Seychelles study sites ───────────────────────────
+sites = Dict{String, Any}()
+site_data = [
+    ("Anse Royale",       "Inner granitic", "coral-dominated",  "low"),
+    ("Baie Ternay",       "Inner granitic", "coral-dominated",  "low"),
+    ("Anse Soleil",       "Inner granitic", "algal-dominated",  "medium"),
+    ("Cousin Island",     "Inner granitic", "coral-dominated",  "low"),
+    ("Praslin North",     "Inner granitic", "algal-dominated",  "high"),
+    ("Aldabra Atoll",     "Outer coralline", "coral-dominated", "none"),
+    ("Cosmoledo Atoll",   "Outer coralline", "coral-dominated", "none"),
+    ("Farquhar Atoll",    "Outer coralline", "coral-dominated", "low"),
+    ("St. Pierre",        "Inner granitic", "algal-dominated",  "medium"),
+    ("Curieuse",          "Inner granitic", "coral-dominated",  "low"),
+    ("Mahé East",         "Inner granitic", "algal-dominated",  "high"),
+    ("Mahé West",         "Inner granitic", "coral-dominated",  "medium"),
+]
+
+for (name, island_type, state, fishing_lvl) in site_data
+    site = mem_vertex!(store, name, "study sites")
+    sites[name] = site
+
+    # Island type classification
+    type_node = mem_vertex!(store, island_type, "site classification")
+    mem_edge!(store, type_node, "contain", site)
+
+    # Ecosystem state
+    state_node = state == "coral-dominated" ? coral_dom : algal_dom
+    mem_edge!(store, site, "then", state_node)  # site leads to observed state
+
+    # Fishing pressure level
+    fish_node = mem_vertex!(store, "fishing: $fishing_lvl", "site properties")
+    mem_edge!(store, site, "note", fish_node)
+end
+
+println("$(length(sites)) Seychelles study sites created")
+```
+
+### Observed measurements at each site
+
+```{julia}
+# Simulated ecological measurements (inspired by Seychelles reef data)
+measurements = [
+    # (site, coral%, macroalgae%, herbivore_kg_ha, temp_°C, nutrients_μmol)
+    ("Anse Royale",     42, 15, 85, 27.8, 0.4),
+    ("Baie Ternay",     55, 8,  120, 27.5, 0.3),
+    ("Anse Soleil",     12, 52, 30,  28.5, 1.2),
+    ("Cousin Island",   48, 10, 110, 27.6, 0.3),
+    ("Praslin North",   8,  65, 15,  29.0, 1.8),
+    ("Aldabra Atoll",   62, 5,  150, 27.2, 0.2),
+    ("Cosmoledo Atoll", 58, 7,  140, 27.3, 0.2),
+    ("Farquhar Atoll",  50, 12, 100, 27.7, 0.4),
+    ("St. Pierre",      10, 58, 25,  28.8, 1.5),
+    ("Curieuse",        45, 12, 95,  27.7, 0.5),
+    ("Mahé East",       6,  70, 12,  29.2, 2.0),
+    ("Mahé West",       35, 22, 70,  28.0, 0.7),
+]
+
+for (name, coral_pct, algae_pct, herb_biomass, sst_val, nut_val) in measurements
+    site = sites[name]
+
+    coral_obs = mem_vertex!(store, "coral cover: $(coral_pct)%", "observations")
+    algae_obs = mem_vertex!(store, "macroalgae cover: $(algae_pct)%", "observations")
+    herb_obs  = mem_vertex!(store, "herbivore biomass: $(herb_biomass) kg/ha", "observations")
+    temp_obs  = mem_vertex!(store, "SST: $(sst_val)°C", "observations")
+    nut_obs   = mem_vertex!(store, "nutrients: $(nut_val) μmol/L", "observations")
+
+    mem_edge!(store, site, "has-pt", coral_obs)
+    mem_edge!(store, site, "has-pt", algae_obs)
+    mem_edge!(store, site, "has-pt", herb_obs)
+    mem_edge!(store, site, "has-pt", temp_obs)
+    mem_edge!(store, site, "has-pt", nut_obs)
+end
+
+println("Measurements recorded for all sites")
+println("Total graph: $(node_count(store)) nodes, $(link_count(store)) links")
+```
+
+## 7. Graph Queries — Ecological Patterns
+
+### 7a. Which sites are coral-dominated vs algal-dominated?
+
+```{julia}
+# Forward cone from each ecosystem state
+for (label, state_node) in [("Coral-dominated", coral_dom), ("Algal-dominated", algal_dom)]
+    cone = backward_cone(store, state_node.nptr; depth=1)
+    site_names = String[]
+    seen = Set{NodePtr}()
+    for path in cone.paths
+        for lnk in path
+            lnk.dst in seen && continue
+            push!(seen, lnk.dst)
+            n = mem_get_node(store, lnk.dst)
+            if n !== nothing && n.chap == "study sites"
+                push!(site_names, n.s)
+            end
+        end
+    end
+    println("$label: $(join(site_names, ", "))")
+end
+```
+
+### 7b. Sites with high macroalgae (>50%)
+
+```{julia}
+# Text search for high macroalgae observations
+high_algae = mem_search_text(store, "macroalgae cover")
+println("Sites with high macroalgal cover:")
+for obs in high_algae
+    pct = match(r"(\d+)%", obs.s)
+    if pct !== nothing && parse(Int, pct.captures[1]) > 50
+        # Trace back to the site
+        back = backward_cone(store, obs.nptr; depth=1)
+        for path in back.paths
+            for lnk in path
+                n = mem_get_node(store, lnk.dst)
+                if n !== nothing && n.chap == "study sites"
+                    println("  $(n.s): $(obs.s)")
+                end
+            end
+        end
+    end
+end
+```
+
+### 7c. Orbit analysis of a key variable
+
+```{julia}
+# Orbit of Herbivorous Fish Biomass — what is it connected to?
+orbit = get_node_orbit(store, herbivores.nptr; limit=50)
+println("Orbit of '$(herbivores.s)':")
+for (i, ring) in enumerate(orbit)
+    isempty(ring) && continue
+    st_name = ["−EXPRESS","−CONTAINS","−LEADSTO","NEAR","+LEADSTO","+CONTAINS","+EXPRESS"][i]
+    println("  $st_name:")
+    for o in ring[1:min(5, length(ring))]
+        n = mem_get_node(store, o.dst)
+        n !== nothing && println("    $(n.s)")
+    end
+end
+```
+
+## 8. Comparing DAG Models
+
+We now have four DAG models stored in the graph. Let us compare them
+using SST's chapter and cone-based queries.
+
+```{julia}
+println("Causal Model Comparison")
+println("═"^60)
+
+for dag_name in ["DAG 1: Confounding", "DAG 2: Mediation & Overcontrol",
+                  "DAG 3: Collider Bias", "DAG 4: Frontdoor Criterion"]
+    results = mem_search_text(store, dag_name)
+    isempty(results) && continue
+    dag_node = results[1]
+
+    # Get description
+    cone = forward_cone(store, dag_node.nptr; depth=1)
+    desc = ""
+    adj_sets = String[]
+    biases = String[]
+
+    for path in cone.paths
+        for lnk in path
+            n = mem_get_node(store, lnk.dst)
+            n === nothing && continue
+            if n.chap == "model descriptions"
+                desc = first(split(n.s, '\n'))
+            elseif n.chap == "adjustment sets"
+                push!(adj_sets, n.s)
+            elseif n.chap == "bias types"
+                push!(biases, n.s)
+            end
+        end
+    end
+
+    println("\n$(dag_node.s)")
+    println("─"^60)
+    !isempty(desc) && println("  Q: $(desc[1:min(80, length(desc))])…")
+    for a in adj_sets
+        marker = startswith(a, "WRONG") || startswith(a, "Frontdoor") ? "  ⚡" : "  ✓"
+        println("$marker $a")
+    end
+    for b in biases
+        println("  ⚠  $b")
+    end
+end
+```
+
+## 9. Automated Backdoor Path Detection
+
+We can write a general-purpose function that, given an exposure and
+outcome in our graph, identifies potential confounders by finding
+nodes with causal paths to *both* the exposure and the outcome.
+
+```{julia}
+"""Find potential confounders: nodes with forward paths to both X and Y."""
+function find_confounders(store, exposure_nptr, outcome_nptr; depth=3)
+    # Backward cone from exposure — what causes the exposure?
+    back_x = backward_cone(store, exposure_nptr; depth=depth)
+    causes_x = Set{NodePtr}()
+    for path in back_x.paths
+        for lnk in path
+            push!(causes_x, lnk.dst)
+        end
+    end
+
+    # Backward cone from outcome — what causes the outcome?
+    back_y = backward_cone(store, outcome_nptr; depth=depth)
+    causes_y = Set{NodePtr}()
+    for path in back_y.paths
+        for lnk in path
+            push!(causes_y, lnk.dst)
+        end
+    end
+
+    # Confounders = nodes that cause both X and Y (but are not X or Y)
+    confounders = intersect(causes_x, causes_y)
+    delete!(confounders, exposure_nptr)
+    delete!(confounders, outcome_nptr)
+
+    return confounders
+end
+
+# Apply to DAG 1: Herbivores → Coral Cover
+conf = find_confounders(store, herbivores.nptr, corals.nptr; depth=3)
+println("Potential confounders for Herbivores → Coral Cover:")
+for c in conf
+    n = mem_get_node(store, c)
+    n !== nothing && println("  • $(n.s) [$(n.chap)]")
+end
+```
+
+```{julia}
+# Apply to DAG 3: Nutrients → Coral Cover
+conf3 = find_confounders(store, nutrients.nptr, corals.nptr; depth=3)
+println("Potential confounders for Nutrients → Coral Cover:")
+for c in conf3
+    n = mem_get_node(store, c)
+    n !== nothing && println("  • $(n.s) [$(n.chap)]")
+end
+```
+
+## 10. Detecting Colliders
+
+A collider is a node where two (or more) arrows converge. We can
+detect colliders by looking for nodes with multiple parents from
+different causal pathways.
+
+```{julia}
+"""Find colliders: nodes with ≥2 LEADSTO parents from distinct paths."""
+function find_colliders(store; min_parents=2)
+    colliders = Tuple{Node, Vector{Node}}[]
+
+    if store isa MemoryStore
+        for (nptr, node) in store.nodes
+            # Count distinct LEADSTO parents (backward LEADSTO = index 3)
+            bwd_leadsto_idx = SemanticSpacetime.sttype_to_index(-1)  # -LEADSTO
+            parents = Node[]
+            if bwd_leadsto_idx >= 1 && bwd_leadsto_idx <= length(node.incidence)
+                for lnk in node.incidence[bwd_leadsto_idx]
+                    parent = mem_get_node(store, lnk.dst)
+                    parent !== nothing && push!(parents, parent)
+                end
+            end
+            if length(parents) >= min_parents
+                push!(colliders, (node, parents))
+            end
+        end
+    end
+
+    return colliders
+end
+
+colliders = find_colliders(store)
+println("Detected colliders (nodes with ≥2 causal parents):")
+for (node, parents) in colliders
+    parent_names = join([p.s for p in parents], ", ")
+    println("  ⚠  $(node.s) ← {$parent_names}")
+end
+```
+
+## 11. Summary — SCM Concepts Mapped to SST
+
+```{julia}
+println("Summary: SCM → SST Mapping")
+println("═"^60)
+mappings = [
+    ("Variable (node in DAG)",     "Node in chapter",           "VERTEX"),
+    ("Causal arrow (X → Y)",      "LEADSTO arrow",             "then, leads to"),
+    ("Taxonomy / grouping",       "CONTAINS arrow",            "contain, has-pt"),
+    ("Property / measurement",    "EXPRESS arrow",             "note, data"),
+    ("Spatial proximity",         "NEAR arrow",                "ll, syn"),
+    ("Confounder detection",      "Backward cone intersection","find_confounders()"),
+    ("Causal pathway",            "Forward path finding",      "find_paths()"),
+    ("Collider detection",        "Multi-parent node query",   "find_colliders()"),
+    ("Adjustment set",            "Node annotated to DAG",     "has-pt → adj set"),
+    ("Observed vs latent",        "EXPRESS metadata",          "note → metadata"),
+]
+
+println(rpad("SCM Concept", 32), rpad("SST Equivalent", 28), "Implementation")
+println("─"^88)
+for (scm, sst, impl) in mappings
+    println(rpad(scm, 32), rpad(sst, 28), impl)
+end
+```
+
+```{julia}
+println("\nFinal graph statistics:")
+println("  Nodes:    $(node_count(store))")
+println("  Links:    $(link_count(store))")
+chapters = mem_get_chapters(store)
+println("  Chapters: $(length(chapters))")
+for ch in sort(chapters)
+    println("    • $ch")
+end
+```
+
+## Discussion
+
+This vignette demonstrated how SemanticSpacetime.jl can encode and
+reason about structural causal models from ecology:
+
+1. **DAG representation** — SST's LEADSTO arrows naturally encode causal
+   relationships. Unlike generic graph libraries, the four-fold arrow
+   type system (NEAR, LEADSTO, CONTAINS, EXPRESS) captures the
+   *semantic character* of each relationship.
+
+2. **Backdoor path detection** — by intersecting backward cones from
+   exposure and outcome, we automatically identify potential confounders
+   that the backdoor criterion requires us to adjust for.
+
+3. **Collider identification** — querying for nodes with multiple causal
+   parents flags variables that should *not* be conditioned on.
+
+4. **Domain ontology alongside causal models** — SST's chapter system
+   naturally separates the ecological ontology (species, sites,
+   measurements) from the causal model structure (DAGs, adjustment
+   sets, bias types). Both coexist in the same knowledge graph.
+
+5. **Observational data integration** — site-level measurements connect
+   to the abstract causal model via CONTAINS and EXPRESS arrows,
+   grounding the DAG in real (simulated) data.
+
+The SCM framework (Arif & MacNeil, 2023) and Semantic Spacetime share
+a fundamental insight: **making assumptions explicit** — whether about
+causal direction or about the spacetime character of relationships —
+leads to more rigorous and transparent inference.

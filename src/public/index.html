@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SemanticSpacetime.jl</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="header">
+  <h1>Semantic<span>Spacetime</span>.jl</h1>
+  <div class="search-box">
+    <input id="searchInput" type="text" placeholder="Search nodes, chapters, contexts…" autocomplete="off">
+  </div>
+  <div class="header-stats" id="headerStats">Loading…</div>
+</div>
+
+<div class="main">
+  <!-- Sidebar: chapters -->
+  <div class="sidebar" id="sidebar">
+    <h3>Chapters</h3>
+    <ul class="chapter-list" id="chapterList"></ul>
+    <h3>ST Types</h3>
+    <ul class="chapter-list" id="stTypeList">
+      <li onclick="filterByST('leadsto')"><span>↝ LEADSTO</span><span class="dot dot-leadsto"></span></li>
+      <li onclick="filterByST('contains')"><span>⊃ CONTAINS</span><span class="dot dot-contains"></span></li>
+      <li onclick="filterByST('express')"><span>≡ EXPRESS</span><span class="dot dot-express"></span></li>
+      <li onclick="filterByST('near')"><span>≈ NEAR</span><span class="dot dot-near"></span></li>
+    </ul>
+  </div>
+
+  <!-- Main content -->
+  <div class="content" id="content">
+    <div class="empty-state" id="emptyState">
+      <h2>SemanticSpacetime.jl Explorer</h2>
+      <p>Search for nodes, browse chapters, or click a node to explore its orbit and connections.</p>
+    </div>
+    <div id="results" style="display:none"></div>
+  </div>
+
+  <!-- Detail panel -->
+  <div class="detail-panel" id="detailPanel">
+    <h3>Node Detail</h3>
+    <div id="nodeDetail">
+      <p class="empty-state" style="padding:20px">Select a node to view details</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────
+let STATE = {
+  chapters: {},
+  currentChapter: null,
+  currentNode: null,
+  searchHistory: JSON.parse(localStorage.getItem('sst-history') || '[]'),
+};
+
+// ─── API helpers ──────────────────────────────────────
+async function api(path) {
+  const r = await fetch(path);
+  return r.json();
+}
+
+// ─── Initialization ───────────────────────────────────
+async function init() {
+  try {
+    const [stats, chapResp] = await Promise.all([api('/api/stats'), api('/api/chapters/detailed')]);
+    const chapters = Array.isArray(chapResp) ? chapResp : (chapResp.chapters || []);
+    document.getElementById('headerStats').textContent =
+      `${stats.nodes || 0} nodes · ${stats.links || 0} links · ${chapters.length} chapters`;
+    renderChapters(chapters);
+  } catch(e) {
+    document.getElementById('headerStats').textContent = 'Connection error';
+  }
+}
+
+// ─── Chapters ─────────────────────────────────────────
+function renderChapters(chapters) {
+  const list = document.getElementById('chapterList');
+  list.innerHTML = '';
+  // chapters is either an array of objects or array of strings
+  const items = Array.isArray(chapters) ? chapters : (chapters.chapters || []);
+  items.forEach(ch => {
+    const name = typeof ch === 'string' ? ch : (ch.name || ch.chapter || ch);
+    const count = typeof ch === 'object' ? (ch.count || ch.nodes || '') : '';
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${esc(name)}</span>${count ? `<span class="count">${count}</span>` : ''}`;
+    li.onclick = () => searchChapter(name);
+    list.appendChild(li);
+  });
+}
+
+// ─── Search ───────────────────────────────────────────
+const searchInput = document.getElementById('searchInput');
+let searchTimer = null;
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => doSearch(searchInput.value), 300);
+});
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { clearTimeout(searchTimer); doSearch(searchInput.value); }
+});
+
+async function doSearch(query) {
+  if (!query.trim()) {
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').innerHTML = '<div class="loading">Searching…</div>';
+
+  try {
+    const data = await api('/api/search?q=' + encodeURIComponent(query));
+    renderSearchResults(data, query);
+    saveHistory(query);
+  } catch(e) {
+    document.getElementById('results').innerHTML = '<div class="empty-state"><p>Search failed</p></div>';
+  }
+}
+
+function searchChapter(name) {
+  searchInput.value = name;
+  STATE.currentChapter = name;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').innerHTML = '<div class="loading">Loading chapter…</div>';
+
+  api('/api/chapter/nodes?name=' + encodeURIComponent(name)).then(data => {
+    renderSearchResults(data, 'Chapter: ' + name);
+    saveHistory(name);
+  }).catch(() => {
+    document.getElementById('results').innerHTML = '<div class="empty-state"><p>Failed to load chapter</p></div>';
+  });
+
+  // Highlight active chapter
+  document.querySelectorAll('.chapter-list li').forEach(li => li.classList.remove('active'));
+  if (event && event.target) event.target.closest('li')?.classList.add('active');
+}
+
+function filterByST(sttype) {
+  searchInput.value = '\\st ' + sttype;
+  doSearch(searchInput.value);
+}
+
+// ─── Search Results ───────────────────────────────────
+function renderSearchResults(data, query) {
+  const container = document.getElementById('results');
+  const nodes = data.results || data.nodes || data || [];
+
+  if (!Array.isArray(nodes) || nodes.length === 0) {
+    container.innerHTML = `<div class="empty-state"><h2>No results</h2><p>No nodes matched "${esc(query)}"</p></div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="breadcrumb">Search: <strong>${esc(query)}</strong> — ${nodes.length} result${nodes.length!==1?'s':''}</div>`;
+
+  nodes.forEach(node => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const nptr = node.nptr || {};
+    const cls = nptr.class || nptr.Class || 0;
+    const cptr = nptr.cptr || nptr.CPtr || 0;
+    const linkCounts = countLinks(node);
+
+    card.innerHTML = `
+      <div class="card-title" onclick="loadNode(${cls},${cptr})">${esc(firstLine(node.text || node.s || ''))}</div>
+      <div class="card-meta">
+        <span>${esc(node.chapter || node.chap || '')}</span>
+        <span style="font-family:monospace;color:var(--fg-dim)">(${cls},${cptr})</span>
+        ${linkCounts.leadsto ? `<span class="badge badge-leadsto">↝ ${linkCounts.leadsto}</span>` : ''}
+        ${linkCounts.contains ? `<span class="badge badge-contains">⊃ ${linkCounts.contains}</span>` : ''}
+        ${linkCounts.express ? `<span class="badge badge-express">≡ ${linkCounts.express}</span>` : ''}
+        ${linkCounts.near ? `<span class="badge badge-near">≈ ${linkCounts.near}</span>` : ''}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function countLinks(node) {
+  // Links may come pre-counted or we derive from incidence
+  return { leadsto: 0, contains: 0, express: 0, near: 0 };
+}
+
+// ─── Node Detail ──────────────────────────────────────
+async function loadNode(cls, cptr) {
+  const detail = document.getElementById('nodeDetail');
+  detail.innerHTML = '<div class="loading">Loading…</div>';
+
+  try {
+    const node = await api(`/node/${cls}/${cptr}`);
+    const links = await api(`/api/links/${cls}/${cptr}`);
+    renderNodeDetail(node, links);
+    loadOrbit(cls, cptr);
+  } catch(e) {
+    detail.innerHTML = '<p>Failed to load node</p>';
+  }
+}
+
+function renderNodeDetail(node, linksData) {
+  const detail = document.getElementById('nodeDetail');
+  const n = node.node || node;
+  const nptr = n.nptr || {};
+  const text = n.text || n.s || '';
+  const chap = n.chapter || n.chap || '';
+
+  // Count links by ST type
+  const allLinks = linksData.links || linksData || [];
+  const stCounts = [0, 0, 0, 0, 0, 0, 0];
+  let totalLinks = 0;
+
+  // Group links by ST type for display
+  const grouped = { leadsto: [], contains: [], express: [], near: [], other: [] };
+
+  if (Array.isArray(allLinks)) {
+    allLinks.forEach(lnk => {
+      totalLinks++;
+      const dst = lnk.dst || {};
+      const item = { arrow: lnk.arrow_name || lnk.arrow || '', dst_text: lnk.dst_text || '', dst_class: dst.class || dst.Class || 0, dst_cptr: dst.cptr || dst.CPtr || 0, weight: lnk.weight || 1.0 };
+      // Classify by arrow or sttype
+      const st = lnk.sttype || lnk.st || 0;
+      if (st === 1 || st === -1) grouped.leadsto.push(item);
+      else if (st === 2 || st === -2) grouped.contains.push(item);
+      else if (st === 3 || st === -3) grouped.express.push(item);
+      else if (st === 0) grouped.near.push(item);
+      else grouped.other.push(item);
+    });
+  }
+
+  detail.innerHTML = `
+    <div class="node-detail-name">${esc(firstLine(text))}</div>
+    <div class="node-detail-chapter">${esc(chap)}</div>
+    <div class="node-detail-nptr">(${(nptr.class||nptr.Class||0)}, ${(nptr.cptr||nptr.CPtr||0)})</div>
+
+    <div class="stat-grid">
+      <div class="stat-cell"><div class="stat-value" style="color:var(--leadsto)">${grouped.leadsto.length}</div><div class="stat-label">Leadsto</div></div>
+      <div class="stat-cell"><div class="stat-value" style="color:var(--contains)">${grouped.contains.length}</div><div class="stat-label">Contains</div></div>
+      <div class="stat-cell"><div class="stat-value" style="color:var(--express)">${grouped.express.length}</div><div class="stat-label">Express</div></div>
+      <div class="stat-cell"><div class="stat-value" style="color:var(--near)">${grouped.near.length}</div><div class="stat-label">Near</div></div>
+    </div>
+
+    <div class="orbit-container"><canvas id="orbitCanvas"></canvas></div>
+
+    <div class="links-section">
+      ${renderLinkGroup('↝ Leads to', 'leadsto', grouped.leadsto)}
+      ${renderLinkGroup('⊃ Contains', 'contains', grouped.contains)}
+      ${renderLinkGroup('≡ Expresses', 'express', grouped.express)}
+      ${renderLinkGroup('≈ Near', 'near', grouped.near)}
+    </div>
+  `;
+}
+
+function renderLinkGroup(title, cssClass, links) {
+  if (links.length === 0) return '';
+  return `
+    <h4><span class="dot dot-${cssClass}"></span> ${title} (${links.length})</h4>
+    ${links.map(l => `
+      <div class="link-item" onclick="loadNode(${l.dst_class},${l.dst_cptr})">
+        <span>${esc(firstLine(l.dst_text || `(${l.dst_class},${l.dst_cptr})`))}</span>
+        <span class="arrow-name">${esc(l.arrow)}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ─── Orbit Canvas ─────────────────────────────────────
+async function loadOrbit(cls, cptr) {
+  try {
+    const data = await api(`/api/orbit/ui/${cls}/${cptr}`);
+    drawOrbit(data);
+  } catch(e) {
+    // Orbit not available
+  }
+}
+
+function drawOrbit(data) {
+  const canvas = document.getElementById('orbitCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth;
+  const H = 400;
+  canvas.width = W;
+  canvas.height = H;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const CX = W / 2;
+  const CY = H / 2;
+
+  // Draw center node
+  ctx.beginPath();
+  ctx.arc(CX, CY, 20, 0, Math.PI * 2);
+  ctx.fillStyle = '#e94560';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Center label
+  const centerText = data.center_text || data.text || '?';
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(firstLine(centerText).substring(0, 20), CX, CY + 35);
+
+  // Draw satellites by ST type in concentric rings
+  const stColors = ['#8b5cf6', '#ef4444', '#3b82f6', '#f59e0b']; // NEAR, LEADSTO, CONTAINS, EXPRESS
+  const stLabels = ['NEAR', 'LEADSTO', 'CONTAINS', 'EXPRESS'];
+  const stOffsets = [0, 1, 2, 3];
+  const satellites = data.satellites || data.orbit || {};
+
+  stOffsets.forEach((stIdx, ring) => {
+    const key = stLabels[stIdx].toLowerCase();
+    const nodes = satellites[key] || satellites[stIdx] || satellites[stLabels[stIdx]] || [];
+    if (nodes.length === 0) return;
+
+    const R = 70 + ring * 55;
+    const color = stColors[stIdx];
+
+    // Draw orbit ring
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.strokeStyle = color + '33';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw satellite nodes
+    nodes.forEach((sat, i) => {
+      const angle = (2 * Math.PI * i / nodes.length) - Math.PI / 2;
+      const x = CX + R * Math.cos(angle);
+      const y = CY + R * Math.sin(angle);
+
+      // Line to center
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = color + '44';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Node dot
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Label
+      const label = (sat.text || sat.s || sat.name || '?').substring(0, 15);
+      ctx.fillStyle = '#ccc';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, x, y + 18);
+    });
+  });
+}
+
+// ─── Utilities ────────────────────────────────────────
+function esc(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function firstLine(s) {
+  return (s || '').split('\n')[0].substring(0, 120);
+}
+
+function saveHistory(q) {
+  STATE.searchHistory = STATE.searchHistory.filter(x => x !== q);
+  STATE.searchHistory.unshift(q);
+  if (STATE.searchHistory.length > 30) STATE.searchHistory.length = 30;
+  localStorage.setItem('sst-history', JSON.stringify(STATE.searchHistory));
+}
+
+// ─── Boot ─────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
