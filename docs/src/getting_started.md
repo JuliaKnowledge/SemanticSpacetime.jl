@@ -1,32 +1,13 @@
 # Getting Started
 
-## Quick Start with PostgreSQL
+## In-Memory Store
+
+The simplest way to use SemanticSpacetime.jl requires no database at all. `MemoryStore` is ideal for experimentation, testing, and lightweight applications.
 
 ```julia
 using SemanticSpacetime
 
-# Open a connection to the SST database
-sst = open_sst()
-
-# Create nodes (vertices)
-n1 = vertex!(sst, "Mary had a little lamb", "nursery rhymes")
-n2 = vertex!(sst, "Its fleece was white as snow", "nursery rhymes")
-
-# Create a directed link (edge) between nodes
-edge!(sst, n1, "then", n2, String[], 1.0f0)
-
-# Close the connection
-close_sst(sst)
-```
-
-## In-Memory Usage (No Database)
-
-For testing or lightweight use, `MemoryStore` provides the same graph operations without requiring PostgreSQL:
-
-```julia
-using SemanticSpacetime
-
-# Register some arrows first
+# Register built-in arrow types
 add_mandatory_arrows!()
 
 # Create an in-memory store
@@ -47,9 +28,51 @@ println(link_count(store))   # 2 (forward + inverse)
 results = mem_search_text(store, "hello")
 ```
 
+## Database-Backed Store
+
+For persistent storage, load a database extension. The `DBStore` uses DBInterface.jl so the same API works across backends.
+
+### SQLite
+
+```julia
+using SemanticSpacetime, SQLite
+
+# In-memory SQLite store
+store = open_sqlite()
+
+# File-backed SQLite store
+store = open_sqlite("knowledge.db")
+```
+
+### DuckDB
+
+```julia
+using SemanticSpacetime, DuckDB
+
+store = open_duckdb()               # in-memory
+store = open_duckdb("knowledge.db") # file-backed
+```
+
+### PostgreSQL
+
+For large-scale deployments, the original PostgreSQL backend is available:
+
+```julia
+using SemanticSpacetime
+
+sst = open_sst()  # connects via CREDENTIALS_FILE or defaults
+
+# Create nodes and links
+n1 = vertex!(sst, "Mary had a little lamb", "nursery rhymes")
+n2 = vertex!(sst, "Its fleece was white as snow", "nursery rhymes")
+edge!(sst, n1, "then", n2, String[], 1.0f0)
+
+close_sst(sst)
+```
+
 ## Arrow Types
 
-Arrows are named, typed relationships. They must be registered before use. The SST system provides mandatory arrows via `add_mandatory_arrows!()`, and you can register custom ones:
+Arrows are named, typed relationships. They must be registered before use. The SST system provides mandatory arrows via [`add_mandatory_arrows!`](@ref), and you can register custom ones:
 
 ```julia
 # Register a forward and inverse arrow pair
@@ -65,22 +88,6 @@ Contexts scope nodes and links. They are sorted, comma-joined string labels:
 ```julia
 ctx_ptr = register_context!(["biology", "genetics"])
 ctx_str = get_context(ctx_ptr)  # "biology,genetics"
-```
-
-## Graph Analysis
-
-```julia
-# Build an adjacency matrix from the database
-adj = build_adjacency(sst)
-
-# Find structural properties
-sources = find_sources(adj)
-sinks = find_sinks(adj)
-loops = detect_loops(adj)
-evc = eigenvector_centrality(adj)
-
-# Get a text summary
-println(graph_summary(adj))
 ```
 
 ## Text Size Classes
