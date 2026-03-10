@@ -75,13 +75,19 @@ function plot_cone(store::AbstractSSTStore, cone::Vector{Vector{Link}};
 
     # Draw links
     for path in cone
-        for lnk in path
-            if haskey(coords, lnk.dst)
-                # Links are drawn as lines; color by arrow STtype
-                entry = get_arrow_by_ptr(lnk.arr)
-                st = isnothing(entry) ? 0 : index_to_sttype(entry.stindex)
-                color = get(ST_COLORS, st, :gray)
-                # Find source (previous in path)
+        for (i, lnk) in enumerate(path)
+            if haskey(coords, lnk.dst) && i > 1
+                # Find source node from previous link's destination
+                src_nptr = path[i - 1].dst
+                if haskey(coords, src_nptr)
+                    entry = get_arrow_by_ptr(lnk.arr)
+                    st = isnothing(entry) ? 0 : index_to_sttype(entry.stindex)
+                    color = get(ST_COLORS, st, :gray)
+                    sc = coords[src_nptr]
+                    dc = coords[lnk.dst]
+                    CairoMakie.lines!(ax, [sc.x, dc.x], [sc.z, dc.z];
+                                      color=color, linewidth=1.5)
+                end
             end
         end
     end
@@ -205,4 +211,67 @@ function save_plot(fig, filename::AbstractString)
     CairoMakie = @eval Main.CairoMakie
     CairoMakie.save(filename, fig)
     nothing
+end
+
+"""
+    to_dot(store::AbstractSSTStore; chapter::String="", title::String="SST") -> String
+
+Export the graph (or a single chapter) as a GraphViz DOT string.
+Nodes become DOT nodes and links become directed edges labeled with the arrow name
+and colored by ST type.
+"""
+function to_dot(store::AbstractSSTStore; chapter::String="", title::String="SST")
+    io = IOBuffer()
+    println(io, "digraph \"", _dot_escape(title), "\" {")
+    println(io, "  rankdir=LR;")
+    println(io, "  node [shape=box, style=filled, fillcolor=lightgrey, fontsize=10];")
+
+    dot_colors = Dict(
+        -3 => "purple", -2 => "blue", -1 => "cyan",
+         0 => "green",   1 => "gold",  2 => "orange", 3 => "red",
+    )
+
+    for (nptr, node) in store.nodes
+        if !isempty(chapter) && node.chapter != chapter
+            continue
+        end
+        id = _dot_node_id(nptr)
+        label = _dot_escape(node.s)
+        println(io, "  ", id, " [label=\"", label, "\"];")
+        for lnk in node.li_fwd
+            entry = get_arrow_by_ptr(lnk.arr)
+            arrow_label = isnothing(entry) ? "" : entry.long
+            st = isnothing(entry) ? 0 : index_to_sttype(entry.stindex)
+            color = get(dot_colors, st, "gray")
+            dst_id = _dot_node_id(lnk.dst)
+            println(io, "  ", id, " -> ", dst_id,
+                    " [label=\"", _dot_escape(arrow_label),
+                    "\", color=\"", color,
+                    "\", fontcolor=\"", color,
+                    "\", fontsize=8];")
+        end
+    end
+
+    println(io, "}")
+    return String(take!(io))
+end
+
+"""
+    save_dot(store::AbstractSSTStore, filename::AbstractString; kwargs...)
+
+Write the graph as a GraphViz DOT file.
+"""
+function save_dot(store::AbstractSSTStore, filename::AbstractString; kwargs...)
+    open(filename, "w") do f
+        write(f, to_dot(store; kwargs...))
+    end
+    nothing
+end
+
+function _dot_node_id(nptr::NodePtr)
+    return "n$(nptr.class)_$(nptr.cptr)"
+end
+
+function _dot_escape(s::AbstractString)
+    return replace(replace(s, "\\" => "\\\\"), "\"" => "\\\"")
 end

@@ -386,6 +386,7 @@ export
     ST_COLORS,
     plot_cone, plot_orbit, plot_graph_summary,
     plot_adjacency_heatmap, save_plot,
+    to_dot, save_dot,
 
     # Display
     show_text, indent, print_node_orbit, print_link_orbit, print_link_path,

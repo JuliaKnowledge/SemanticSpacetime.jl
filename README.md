@@ -52,10 +52,10 @@ close_sst(sst)
 | High-level Vertex/Edge/Hub API | ✅ | `api.jl` |
 | Database queries (nodes, chapters, contexts) | ✅ | `db_queries.jl` |
 | Graph analysis (sources, sinks, cycles, centrality) | ✅ | `graph_report.jl` |
-| N4L compiler (Notes For Learning) | 🔲 Planned | — |
-| Search and path solving | 🔲 Planned | — |
-| Web interface / HTTP server | 🔲 Planned | — |
-| Visualization (GraphViz DOT export) | 🔲 Planned | — |
+| N4L parser and compiler (Notes For Learning) | ✅ | `n4l_parser.jl`, `n4l_compiler.jl`, `n4l_standalone.jl` |
+| Search and path solving | ✅ | `search.jl`, `pathsolve.jl`, `cone_search.jl`, `weighted_search.jl` |
+| Web interface / HTTP server | ✅ | `http_server.jl`, `web_types.jl` |
+| Visualization (CairoMakie plots, GraphViz DOT export) | ✅ | `visualization.jl` |
 
 ## The SST Type System
 
