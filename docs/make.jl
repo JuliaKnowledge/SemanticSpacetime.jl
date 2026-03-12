@@ -37,3 +37,9 @@ makedocs(
     checkdocs = :exports,
     warnonly = true,
 )
+
+deploydocs(
+    repo = "github.com/JuliaKnowledge/SemanticSpacetime.jl.git",
+    devbranch = "main",
+    push_preview = true,
+)
