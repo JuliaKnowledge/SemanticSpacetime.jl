@@ -232,23 +232,26 @@ function to_dot(store::AbstractSSTStore; chapter::String="", title::String="SST"
     )
 
     for (nptr, node) in store.nodes
-        if !isempty(chapter) && node.chapter != chapter
+        if !isempty(chapter) && node.chap != chapter
             continue
         end
         id = _dot_node_id(nptr)
         label = _dot_escape(node.s)
         println(io, "  ", id, " [label=\"", label, "\"];")
-        for lnk in node.li_fwd
-            entry = get_arrow_by_ptr(lnk.arr)
-            arrow_label = isnothing(entry) ? "" : entry.long
-            st = isnothing(entry) ? 0 : index_to_sttype(entry.stindex)
-            color = get(dot_colors, st, "gray")
-            dst_id = _dot_node_id(lnk.dst)
-            println(io, "  ", id, " -> ", dst_id,
-                    " [label=\"", _dot_escape(arrow_label),
-                    "\", color=\"", color,
-                    "\", fontcolor=\"", color,
-                    "\", fontsize=8];")
+        for stvec in node.incidence
+            for lnk in stvec
+                entry = get_arrow_by_ptr(lnk.arr)
+                arrow_label = isnothing(entry) ? "" : entry.short
+                st = isnothing(entry) ? 0 : index_to_sttype(entry.stindex)
+                st > 0 || continue  # only forward links to avoid duplicates
+                color = get(dot_colors, st, "gray")
+                dst_id = _dot_node_id(lnk.dst)
+                println(io, "  ", id, " -> ", dst_id,
+                        " [label=\"", _dot_escape(arrow_label),
+                        "\", color=\"", color,
+                        "\", fontcolor=\"", color,
+                        "\", fontsize=8];")
+            end
         end
     end
 
