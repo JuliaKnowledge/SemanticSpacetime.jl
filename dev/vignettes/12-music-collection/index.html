@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Music Collection · SemanticSpacetime.jl</title><meta name="title" content="Music Collection · SemanticSpacetime.jl"/><meta property="og:title" content="Music Collection · SemanticSpacetime.jl"/><meta property="twitter:title" content="Music Collection · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/12-music-collection/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/12-music-collection/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/12-music-collection/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li class="is-active"><a class="tocitem" href>Music Collection</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Loading-the-Music-Collection"><span>Loading the Music Collection</span></a></li><li><a class="tocitem" href="#Exploring-the-Structure"><span>Exploring the Structure</span></a></li><li><a class="tocitem" href="#Navigating-AlbumTrack-Relationships"><span>Navigating Album→Track Relationships</span></a></li><li><a class="tocitem" href="#Graph-Statistics"><span>Graph Statistics</span></a></li><li><a class="tocitem" href="#Centrality-Analysis"><span>Centrality Analysis</span></a></li><li><a class="tocitem" href="#Sources-and-Sinks"><span>Sources and Sinks</span></a></li><li><a class="tocitem" href="#Cone-Search-from-an-Album"><span>Cone Search from an Album</span></a></li><li><a class="tocitem" href="#Chapter-Distribution"><span>Chapter Distribution</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Music Collection</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Music Collection</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Knowledge-Graphs-from-Structured-Data"><a class="docs-heading-anchor" href="#Knowledge-Graphs-from-Structured-Data">Knowledge Graphs from Structured Data</a><a id="Knowledge-Graphs-from-Structured-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Knowledge-Graphs-from-Structured-Data" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>SST can represent structured data — such as music catalogues, inventories, or databases — as typed knowledge graphs. This vignette loads the <code>MusicCollection/example_collection.n4l</code> example, which encodes a collection of Rush and Vaughan Williams albums with tracks, durations, composers, and producers. It uses its own custom <code>SSTconfig</code> with domain-specific arrow types.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+const MUSIC_DIR = joinpath(@__DIR__, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;SSTorytime&quot;, &quot;examples&quot;, &quot;MusicCollection&quot;)
+const MUSIC_CONFIG = joinpath(MUSIC_DIR, &quot;SSTconfig&quot;)
+println(&quot;Music config available: &quot;, isdir(MUSIC_CONFIG))
+println(&quot;N4L file exists: &quot;, isfile(joinpath(MUSIC_DIR, &quot;example_collection.n4l&quot;)))</code></pre><pre><code class="nohighlight hljs">Music config available: true
+N4L file exists: true</code></pre><h2 id="Loading-the-Music-Collection"><a class="docs-heading-anchor" href="#Loading-the-Music-Collection">Loading the Music Collection</a><a id="Loading-the-Music-Collection-1"></a><a class="docs-heading-anchor-permalink" href="#Loading-the-Music-Collection" title="Permalink"></a></h2><p>The <code>example_collection.n4l</code> file uses domain-specific arrows like <code>(album by)</code>, <code>(track in)</code>, <code>(duration)</code>, <code>(music by)</code>, and <code>(genre)</code> defined in its own SSTconfig:</p><pre><code class="language-julia hljs">music_text = read(joinpath(MUSIC_DIR, &quot;example_collection.n4l&quot;), String)
+println(&quot;File size: $(length(music_text)) characters&quot;)
+println(&quot;First 30 lines:&quot;)
+for (i, line) in enumerate(split(music_text, &#39;\n&#39;))
+    i &gt; 30 &amp;&amp; break
+    println(&quot;  &quot;, line)
+end</code></pre><pre><code class="nohighlight hljs">File size: 18110 characters
+First 30 lines:
+  
+  -music collection template
+  
+    :: rush albums, progressive rock ::
+  
+  @al_1 2112 (album by) Rush
+          &quot;  (tracks) 6
+          &quot;  (img) &quot;/Resources/Rush/2112\ Delux\ Edition/folder.jpg&quot;
+          &quot;  (released) March 1976
+          &quot;  (remastered) 2012
+          &quot;  (publisher) Mercury Records
+          &quot;  (genre) Progressive Rock  // Separate to make direct connection
+          &quot;  (genre) Concept Album
+          &quot;  (ensemble) electric rock band
+          &quot;  (music by) %&quot;Alex Lifeson&quot;, %&quot;Geddy Lee&quot;, %&quot;Neil Peart&quot;
+          &quot;  (words by) &quot;Neil Peart&quot;
+          &quot;  (producer) Terry Brown
+          &quot;  (next album) Farewell To Kings
+  
+   +:: _sequence_ ::
+  
+   1. 2112                   (track in) 2112
+        &quot;                    (duration) 20:33
+  
+   2. A Passage To Bangkok   (track in) 2112
+        &quot;                    (duration) 3:35
+  
+   3. The Twilight Zone      (track in) 2112
+        &quot;                    (duration) 3:20</code></pre><pre><code class="language-julia hljs">store = MemoryStore()
+try
+    cr = compile_n4l_string!(store, music_text; config_dir=MUSIC_CONFIG)
+    println(&quot;Nodes: $(cr.nodes_created), Edges: $(cr.edges_created)&quot;)
+    println(&quot;Chapters: &quot;, join(cr.chapters, &quot;, &quot;))
+catch e
+    println(&quot;Compilation note: &quot;, e)
+end
+
+println(&quot;\nGraph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Nodes: 194, Edges: 298
+Chapters: music collection template
+
+Graph: 194 nodes, 594 links</code></pre><h2 id="Exploring-the-Structure"><a class="docs-heading-anchor" href="#Exploring-the-Structure">Exploring the Structure</a><a id="Exploring-the-Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Exploring-the-Structure" title="Permalink"></a></h2><p>See how structured data (albums, artists, tracks) maps to SST nodes:</p><pre><code class="language-julia hljs"># Look for album nodes
+for album_name in [&quot;2112&quot;, &quot;Farewell To Kings&quot;, &quot;Hemispheres&quot;]
+    nodes = mem_get_nodes_by_name(store, album_name)
+    if !isempty(nodes)
+        n = nodes[1]
+        total_links = sum(length(ch) for ch in n.incidence)
+        println(&quot;Album &#39;$(n.s)&#39; in chapter &#39;$(n.chap)&#39;: $total_links connections&quot;)
+    else
+        println(&quot;Album &#39;$album_name&#39;: not found by exact name&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Album &#39;2112&#39; in chapter &#39;music collection template&#39;: 20 connections
+Album &#39;Farewell To Kings&#39; in chapter &#39;music collection template&#39;: 22 connections
+Album &#39;Hemispheres&#39; in chapter &#39;music collection template&#39;: 18 connections</code></pre><pre><code class="language-julia hljs"># Search for artist-related nodes
+for query in [&quot;Rush&quot;, &quot;Vaughan Williams&quot;, &quot;Neil Peart&quot;]
+    results = mem_search_text(store, query)
+    println(&quot;Search &#39;$query&#39;: $(length(results)) results&quot;)
+    for n in results[1:min(3, length(results))]
+        label = first(split(n.s, &#39;\n&#39;))
+        label = label[1:min(60, length(label))]
+        println(&quot;  &#39;$label&#39; [$(n.chap)]&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Search &#39;Rush&#39;: 4 results
+  &#39;Rush&#39; [music collection template]
+  &#39;/Resources/Rush/Hemispheres/folder.jpg&#39; [music collection template]
+  &#39;/Resources/Rush/2112\ Delux\ Edition/folder.jpg&#39; [music collection template]
+Search &#39;Vaughan Williams&#39;: 7 results
+  &#39;Ralph Vaughan Williams&#39; [music collection template]
+  &#39;Andrew Manze &amp; The Royal Liverpool Philharmonic Orchestra : &#39; [music collection template]
+  &#39;Vaughan Williams Symphony No.5 / Symphony No.6&#39; [music collection template]
+Search &#39;Neil Peart&#39;: 2 results
+  &#39;Neil Peart&#39; [music collection template]
+  &#39;&quot;Alex Lifeson&quot;, &quot;Geddy Lee&quot;, &quot;Neil Peart&quot;&#39; [music collection template]</code></pre><h2 id="Navigating-AlbumTrack-Relationships"><a class="docs-heading-anchor" href="#Navigating-AlbumTrack-Relationships">Navigating Album→Track Relationships</a><a id="Navigating-AlbumTrack-Relationships-1"></a><a class="docs-heading-anchor-permalink" href="#Navigating-AlbumTrack-Relationships" title="Permalink"></a></h2><p>Albums contain tracks via containment arrows. Let’s explore the album structure:</p><pre><code class="language-julia hljs"># Find tracks by searching for track-related text
+tracks = mem_search_text(store, &quot;track&quot;)
+println(&quot;Track-related nodes: $(length(tracks))&quot;)
+for t in tracks[1:min(5, length(tracks))]
+    label = first(split(t.s, &#39;\n&#39;))  # first line only
+    println(&quot;  &#39;$(label[1:min(60, length(label))])&#39;&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Track-related nodes: 0</code></pre><pre><code class="language-julia hljs"># Search for specific songs (filter out multi-line nodes like lyrics)
+for song in [&quot;Passage To Bangkok&quot;, &quot;Trees&quot;, &quot;Twilight Zone&quot;, &quot;Xanadu&quot;]
+    results = mem_search_text(store, song)
+    # Filter to single-line, reasonably-sized titles
+    titles = filter(n -&gt; !occursin(&#39;\n&#39;, n.s) &amp;&amp; length(n.s) &lt; 80, results)
+    if !isempty(titles)
+        println(&quot;Found: &#39;$(titles[1].s)&#39;&quot;)
+    elseif !isempty(results)
+        println(&quot;Found: &#39;$(first(split(results[1].s, &#39;\n&#39;)))&#39;  (multiline node)&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Found: &#39;2. A Passage To Bangkok&#39;
+Found: &#39;3, The Trees&#39;
+Found: &#39;3. The Twilight Zone&#39;
+Found: &#39;2. Xanadu&#39;</code></pre><h2 id="Graph-Statistics"><a class="docs-heading-anchor" href="#Graph-Statistics">Graph Statistics</a><a id="Graph-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#Graph-Statistics" title="Permalink"></a></h2><pre><code class="language-julia hljs">adj = SemanticSpacetime.AdjacencyMatrix()
+for (nptr, node) in store.nodes
+    for links in node.incidence
+        for link in links
+            SemanticSpacetime.add_edge!(adj, nptr, link.dst, Float64(link.wgt))
+        end
+    end
+end
+
+println(graph_summary(adj))</code></pre><pre><code class="nohighlight hljs">Graph Summary
+─────────────
+  Nodes:   194
+  Links:   590 (directed)
+  Sources: 0
+  Sinks:   0
+  Top centrality:
+    (3,3)  1.0000
+    (1,1)  0.8137
+    (1,12)  0.7526
+    (4,1)  0.4012
+    (2,7)  0.3890</code></pre><h2 id="Centrality-Analysis"><a class="docs-heading-anchor" href="#Centrality-Analysis">Centrality Analysis</a><a id="Centrality-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Centrality-Analysis" title="Permalink"></a></h2><p>Which nodes are most central in the music knowledge graph?</p><pre><code class="language-julia hljs">if !isempty(adj.nodes)
+    centrality = eigenvector_centrality(adj; max_iter=100, tol=1e-6)
+    ranked = sort(collect(centrality), by=x -&gt; x.second, rev=true)
+
+    println(&quot;Most central nodes in the music collection:&quot;)
+    for (nptr, score) in ranked[1:min(12, length(ranked))]
+        node = mem_get_node(store, nptr)
+        if node !== nothing
+            label = first(split(node.s, &#39;\n&#39;))
+            label = label[1:min(45, length(label))]
+            println(&quot;  $(rpad(label, 47)) $(round(score, digits=4))&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Most central nodes in the music collection:
+  Farewell To Kings                               1.0
+  2112                                            0.8137
+  Hemispheres                                     0.7526
+  &quot;Alex Lifeson&quot;, &quot;Geddy Lee&quot;, &quot;Neil Peart&quot;       0.4012
+  Neil Peart                                      0.389
+  Rush                                            0.3364
+  Progressive Rock                                0.3364
+  Concept Album                                   0.3364
+  electric rock band                              0.3364
+  Mercury Records                                 0.3364
+  Terry Brown                                     0.3364
+  6                                               0.2378</code></pre><h2 id="Sources-and-Sinks"><a class="docs-heading-anchor" href="#Sources-and-Sinks">Sources and Sinks</a><a id="Sources-and-Sinks-1"></a><a class="docs-heading-anchor-permalink" href="#Sources-and-Sinks" title="Permalink"></a></h2><p>Sources are nodes with no incoming edges (e.g., top-level albums); sinks are leaf nodes (e.g., duration values, producer names):</p><pre><code class="language-julia hljs">sources = find_sources(adj)
+println(&quot;Sources ($(length(sources))):&quot;)
+for nptr in sources[1:min(8, length(sources))]
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println(&quot;  &#39;$(first(split(node.s, &#39;\n&#39;)))&#39;&quot;)
+    end
+end
+
+sinks = find_sinks(adj)
+println(&quot;\nSinks ($(length(sinks))):&quot;)
+for nptr in sinks[1:min(8, length(sinks))]
+    node = mem_get_node(store, nptr)
+    if node !== nothing
+        println(&quot;  &#39;$(first(split(node.s, &#39;\n&#39;)))&#39;&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Sources (0):
+
+Sinks (0):</code></pre><h2 id="Cone-Search-from-an-Album"><a class="docs-heading-anchor" href="#Cone-Search-from-an-Album">Cone Search from an Album</a><a id="Cone-Search-from-an-Album-1"></a><a class="docs-heading-anchor-permalink" href="#Cone-Search-from-an-Album" title="Permalink"></a></h2><p>Trace what an album “contains” or “leads to”:</p><pre><code class="language-julia hljs"># Find an album node and explore its cone
+album_hits = mem_search_text(store, &quot;2112&quot;)
+if !isempty(album_hits)
+    cone = forward_cone(store, album_hits[1].nptr; depth=3)
+    println(&quot;Forward cone from &#39;$(album_hits[1].s)&#39;:&quot;)
+    for nptr in cone.supernodes
+        node = mem_get_node(store, nptr)
+        if node !== nothing
+            println(&quot;  → &#39;$(first(split(node.s, &#39;\n&#39;)))&#39;&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Forward cone from &#39;/Resources/Rush/2112\ Delux\ Edition/folder.jpg&#39;:</code></pre><h2 id="Chapter-Distribution"><a class="docs-heading-anchor" href="#Chapter-Distribution">Chapter Distribution</a><a id="Chapter-Distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Chapter-Distribution" title="Permalink"></a></h2><pre><code class="language-julia hljs">chap_counts = Dict{String,Int}()
+for (_, node) in store.nodes
+    chap_counts[node.chap] = get(chap_counts, node.chap, 0) + 1
+end
+
+for (chap, count) in sort(collect(chap_counts), by=x -&gt; -x.second)
+    println(&quot;  $(rpad(chap, 30)) $count nodes&quot;)
+end</code></pre><pre><code class="nohighlight hljs">  music collection template      194 nodes</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>Structured data maps naturally to SST:</p><table><tr><th style="text-align: right">Data Concept</th><th style="text-align: right">SST Representation</th></tr><tr><td style="text-align: right">Albums, Artists, Tracks</td><td style="text-align: right">Nodes in typed chapters</td></tr><tr><td style="text-align: right">“Album by Artist”</td><td style="text-align: right">LEADSTO or CONTAINS edges</td></tr><tr><td style="text-align: right">“Track in Album”</td><td style="text-align: right">CONTAINS edges (containment)</td></tr><tr><td style="text-align: right">Metadata (duration, genre)</td><td style="text-align: right">EXPRESS edges (properties)</td></tr><tr><td style="text-align: right">Similar artists</td><td style="text-align: right">NEAR edges (similarity)</td></tr></table><p>The <code>MusicCollection</code> SSTconfig defines domain-specific arrows that make the N4L notation expressive and natural for cataloguing structured data.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../11-promise-theory/">« Promise Theory</a><a class="docs-footer-nextpage" href="../13-text-analysis/">Text Analysis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 19 March 2026 06:47">Thursday 19 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

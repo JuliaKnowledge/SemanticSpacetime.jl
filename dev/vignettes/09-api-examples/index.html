@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Api Examples · SemanticSpacetime.jl</title><meta name="title" content="Api Examples · SemanticSpacetime.jl"/><meta property="og:title" content="Api Examples · SemanticSpacetime.jl"/><meta property="twitter:title" content="Api Examples · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/09-api-examples/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/09-api-examples/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/09-api-examples/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li class="is-active"><a class="tocitem" href>Api Examples</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#API-Example-1:-Mary’s-Lamb-Story"><span>API Example 1: Mary’s Lamb Story</span></a></li><li><a class="tocitem" href="#API-Example-2:-HubJoin"><span>API Example 2: HubJoin</span></a></li><li><a class="tocitem" href="#API-Example-3:-Maze-Solver"><span>API Example 3: Maze Solver</span></a></li><li><a class="tocitem" href="#API-Example-4:-Loop-Corrected-Paths-(Double-Slit)"><span>API Example 4: Loop-Corrected Paths (Double Slit)</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Api Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Api Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Go-API-Examples-Ported-to-Julia"><a class="docs-heading-anchor" href="#Go-API-Examples-Ported-to-Julia">Go API Examples Ported to Julia</a><a id="Go-API-Examples-Ported-to-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#Go-API-Examples-Ported-to-Julia" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>The Go SSTorytime library includes four API examples demonstrating graph construction, hub joins, maze solving, and loop-corrected path finding. This vignette ports each example to Julia using SemanticSpacetime.jl’s <code>MemoryStore</code>, showing how the Go patterns translate idiomatically.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Register arrows used across examples
+then_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;then&quot;, &quot;leads to next&quot;, &quot;+&quot;)
+then_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;prev&quot;, &quot;preceded by&quot;, &quot;-&quot;)
+insert_inverse_arrow!(then_f, then_b)
+
+fwd_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;fwd&quot;, &quot;forward link&quot;, &quot;+&quot;)
+fwd_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;bwd&quot;, &quot;backward link&quot;, &quot;-&quot;)
+insert_inverse_arrow!(fwd_f, fwd_b)
+
+has_f = insert_arrow!(&quot;CONTAINS&quot;, &quot;has&quot;, &quot;contains&quot;, &quot;+&quot;)
+has_b = insert_arrow!(&quot;CONTAINS&quot;, &quot;in&quot;, &quot;is in&quot;, &quot;-&quot;)
+insert_inverse_arrow!(has_f, has_b)
+
+belongs_f = insert_arrow!(&quot;CONTAINS&quot;, &quot;belongs to&quot;, &quot;belongs to&quot;, &quot;-&quot;)
+belongs_b = insert_arrow!(&quot;CONTAINS&quot;, &quot;owns&quot;, &quot;owns&quot;, &quot;+&quot;)
+insert_inverse_arrow!(belongs_b, belongs_f)
+
+println(&quot;Arrows registered.&quot;)</code></pre><pre><code class="nohighlight hljs">Arrows registered.</code></pre><h2 id="API-Example-1:-Mary’s-Lamb-Story"><a class="docs-heading-anchor" href="#API-Example-1:-Mary’s-Lamb-Story">API Example 1: Mary’s Lamb Story</a><a id="API-Example-1:-Mary’s-Lamb-Story-1"></a><a class="docs-heading-anchor-permalink" href="#API-Example-1:-Mary’s-Lamb-Story" title="Permalink"></a></h2><p>The Go <code>API_EXAMPLE_1</code> creates a nursery-rhyme story graph with <code>SST.Vertex()</code> and <code>SST.Edge()</code>, then traces paths forward. Here we do the same with <code>mem_vertex!</code> and <code>mem_edge!</code>.</p><pre><code class="language-julia hljs">store1 = MemoryStore()
+chap = &quot;home and away&quot;
+
+n1 = mem_vertex!(store1, &quot;Mary had a little lamb&quot;, chap)
+n2 = mem_vertex!(store1, &quot;Whose fleece was dull and grey&quot;, chap)
+n3 = mem_vertex!(store1, &quot;And every time she washed it clean&quot;, chap)
+n4 = mem_vertex!(store1, &quot;It just went to roll in the hay&quot;, chap)
+n5 = mem_vertex!(store1, &quot;And when it reached a certain age&quot;, chap)
+n6 = mem_vertex!(store1, &quot;She&#39;d serve it on a tray&quot;, chap)
+
+mem_edge!(store1, n1, &quot;then&quot;, n2, String[], 1.0f0)
+mem_edge!(store1, n2, &quot;then&quot;, n3, String[], 0.5f0)
+mem_edge!(store1, n2, &quot;then&quot;, n5, String[], 0.5f0)
+mem_edge!(store1, n3, &quot;then&quot;, n4, String[], 1.0f0)
+mem_edge!(store1, n5, &quot;then&quot;, n6, String[], 1.0f0)
+
+println(&quot;Story graph: $(node_count(store1)) nodes, $(link_count(store1)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Story graph: 6 nodes, 10 links</code></pre><p>Now trace the branching narrative with <code>forward_cone</code>, mirroring the Go <code>GetFwdPathsAsLinks</code> call:</p><pre><code class="language-julia hljs">cone = forward_cone(store1, n1.nptr; depth=4)
+
+println(&quot;Forward cone from &#39;Mary had a little lamb&#39;:&quot;)
+println(&quot;  Paths: $(length(cone.paths))&quot;)
+for nptr in cone.supernodes
+    node = mem_get_node(store1, nptr)
+    if node !== nothing
+        println(&quot;  → &#39;$(node.s)&#39;&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Forward cone from &#39;Mary had a little lamb&#39;:
+  Paths: 5
+  → &#39;Whose fleece was dull and grey&#39;
+  → &#39;And every time she washed it clean&#39;
+  → &#39;And when it reached a certain age&#39;</code></pre><p>The story branches at line 2 into two endings — exactly as the Go example shows:</p><pre><code class="language-julia hljs">result = find_paths(store1, n1.nptr, n4.nptr; max_depth=5)
+println(&quot;Paths to &#39;roll in the hay&#39;: $(length(result.paths))&quot;)
+for (i, path) in enumerate(result.paths)
+    names = [mem_get_node(store1, p).s for p in path if mem_get_node(store1, p) !== nothing]
+    println(&quot;  Path $i: &quot;, join(names, &quot; → &quot;))
+end
+
+result2 = find_paths(store1, n1.nptr, n6.nptr; max_depth=5)
+println(&quot;\nPaths to &#39;serve on a tray&#39;: $(length(result2.paths))&quot;)
+for (i, path) in enumerate(result2.paths)
+    names = [mem_get_node(store1, p).s for p in path if mem_get_node(store1, p) !== nothing]
+    println(&quot;  Path $i: &quot;, join(names, &quot; → &quot;))
+end</code></pre><pre><code class="nohighlight hljs">Paths to &#39;roll in the hay&#39;: 1
+  Path 1: Mary had a little lamb → Whose fleece was dull and grey → And every time she washed it clean → It just went to roll in the hay
+
+Paths to &#39;serve on a tray&#39;: 1
+  Path 1: Mary had a little lamb → Whose fleece was dull and grey → And when it reached a certain age → She&#39;d serve it on a tray</code></pre><h2 id="API-Example-2:-HubJoin"><a class="docs-heading-anchor" href="#API-Example-2:-HubJoin">API Example 2: HubJoin</a><a id="API-Example-2:-HubJoin-1"></a><a class="docs-heading-anchor-permalink" href="#API-Example-2:-HubJoin" title="Permalink"></a></h2><p>The Go <code>API_EXAMPLE_2</code> creates nodes and joins them to a central hub using <code>SST.HubJoin()</code>. In Julia, <code>hub_join!</code> requires an <code>SSTConnection</code> (database-backed). We replicate the logic using <code>mem_vertex!</code> and <code>mem_edge!</code> to create the same hub pattern in memory.</p><pre><code class="language-julia hljs">store2 = MemoryStore()
+
+names = [&quot;test_node1&quot;, &quot;test_node2&quot;, &quot;test_node3&quot;]
+weights = Float32[0.2, 0.4, 1.0]
+context = [&quot;some&quot;, &quot;context&quot;, &quot;tags&quot;]
+
+nodes = [mem_vertex!(store2, n, &quot;my chapter&quot;) for n in names]
+
+# Create an auto-named hub (like Go&#39;s HubJoin with empty name)
+hub1 = mem_vertex!(store2, &quot;hub_$(join(names, &#39;_&#39;))&quot;, &quot;my chapter&quot;)
+for (i, node) in enumerate(nodes)
+    mem_edge!(store2, node, &quot;then&quot;, hub1, context, weights[i])
+end
+println(&quot;Hub 1: &#39;$(hub1.s)&#39; with $(length(nodes)) spokes&quot;)
+
+# Create a named hub (like Go&#39;s HubJoin with &quot;mummy_node&quot;)
+hub2 = mem_vertex!(store2, &quot;mummy_node&quot;, &quot;my chapter&quot;)
+for node in nodes
+    mem_edge!(store2, node, &quot;belongs to&quot;, hub2)
+end
+println(&quot;Hub 2: &#39;$(hub2.s)&#39; with $(length(nodes)) members&quot;)
+
+println(&quot;Store: $(node_count(store2)) nodes, $(link_count(store2)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Hub 1: &#39;hub_test_node1_test_node2_test_node3&#39; with 3 spokes
+Hub 2: &#39;mummy_node&#39; with 3 members
+Store: 5 nodes, 12 links</code></pre><p>Inspect the hub structure:</p><pre><code class="language-julia hljs">for node in nodes
+    total = sum(length(ch) for ch in node.incidence)
+    println(&quot;&#39;$(node.s)&#39;: $total connections&quot;)
+end</code></pre><pre><code class="nohighlight hljs">&#39;test_node1&#39;: 2 connections
+&#39;test_node2&#39;: 2 connections
+&#39;test_node3&#39;: 2 connections</code></pre><h2 id="API-Example-3:-Maze-Solver"><a class="docs-heading-anchor" href="#API-Example-3:-Maze-Solver">API Example 3: Maze Solver</a><a id="API-Example-3:-Maze-Solver-1"></a><a class="docs-heading-anchor-permalink" href="#API-Example-3:-Maze-Solver" title="Permalink"></a></h2><p>The Go <code>API_EXAMPLE_3</code> encodes 9 maze corridors and finds paths from <code>maze_a7</code> to <code>maze_i6</code>. We build the same graph in memory and use <code>find_paths</code>:</p><pre><code class="language-julia hljs">store3 = MemoryStore()
+
+maze_paths = [
+    [&quot;maze_a7&quot;,&quot;maze_b7&quot;,&quot;maze_b6&quot;,&quot;maze_c6&quot;,&quot;maze_c5&quot;,&quot;maze_b5&quot;,&quot;maze_b4&quot;,&quot;maze_a4&quot;,&quot;maze_a3&quot;,&quot;maze_b3&quot;,&quot;maze_c3&quot;,&quot;maze_d3&quot;,&quot;maze_d2&quot;,&quot;maze_e2&quot;,&quot;maze_e3&quot;,&quot;maze_f3&quot;,&quot;maze_f4&quot;,&quot;maze_e4&quot;,&quot;maze_e5&quot;,&quot;maze_f5&quot;,&quot;maze_f6&quot;,&quot;maze_g6&quot;,&quot;maze_g5&quot;,&quot;maze_g4&quot;,&quot;maze_h4&quot;,&quot;maze_h5&quot;,&quot;maze_h6&quot;,&quot;maze_i6&quot;],
+    [&quot;maze_d1&quot;,&quot;maze_d2&quot;],
+    [&quot;maze_f1&quot;,&quot;maze_f2&quot;,&quot;maze_e2&quot;],
+    [&quot;maze_f2&quot;,&quot;maze_g2&quot;,&quot;maze_h2&quot;,&quot;maze_h3&quot;,&quot;maze_g3&quot;,&quot;maze_g2&quot;],
+    [&quot;maze_b1&quot;,&quot;maze_c1&quot;,&quot;maze_c2&quot;,&quot;maze_b2&quot;,&quot;maze_b1&quot;],
+    [&quot;maze_b7&quot;,&quot;maze_b8&quot;,&quot;maze_c8&quot;,&quot;maze_c7&quot;,&quot;maze_d7&quot;,&quot;maze_d6&quot;,&quot;maze_e6&quot;,&quot;maze_e7&quot;,&quot;maze_f7&quot;,&quot;maze_f8&quot;],
+    [&quot;maze_d7&quot;,&quot;maze_d8&quot;,&quot;maze_e8&quot;,&quot;maze_e7&quot;],
+    [&quot;maze_f7&quot;,&quot;maze_g7&quot;,&quot;maze_g8&quot;,&quot;maze_h8&quot;,&quot;maze_h7&quot;],
+    [&quot;maze_a2&quot;,&quot;maze_a1&quot;],
+]
+
+for corridor in maze_paths
+    for leg in 2:length(corridor)
+        nfrom = mem_vertex!(store3, corridor[leg-1], &quot;solve maze&quot;)
+        nto = mem_vertex!(store3, corridor[leg], &quot;solve maze&quot;)
+        mem_edge!(store3, nfrom, &quot;fwd&quot;, nto)
+    end
+end
+
+println(&quot;Maze: $(node_count(store3)) nodes, $(link_count(store3)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Maze: 56 nodes, 112 links</code></pre><p>Solve from start to end:</p><pre><code class="language-julia hljs">start_nodes = mem_get_nodes_by_name(store3, &quot;maze_a7&quot;)
+end_nodes = mem_get_nodes_by_name(store3, &quot;maze_i6&quot;)
+
+if !isempty(start_nodes) &amp;&amp; !isempty(end_nodes)
+    solutions = find_paths(store3, start_nodes[1].nptr, end_nodes[1].nptr; max_depth=30)
+    println(&quot;Solutions found: $(length(solutions.paths)) DAG paths, $(length(solutions.loops)) loop paths&quot;)
+    for (i, path) in enumerate(solutions.paths)
+        names = [mem_get_node(store3, p).s for p in path if mem_get_node(store3, p) !== nothing]
+        println(&quot;  Story $i ($(length(names)) steps): $(names[1]) → ... → $(names[end])&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Solutions found: 1 DAG paths, 0 loop paths
+  Story 1 (28 steps): maze_a7 → ... → maze_i6</code></pre><h2 id="API-Example-4:-Loop-Corrected-Paths-(Double-Slit)"><a class="docs-heading-anchor" href="#API-Example-4:-Loop-Corrected-Paths-(Double-Slit)">API Example 4: Loop-Corrected Paths (Double Slit)</a><a id="API-Example-4:-Loop-Corrected-Paths-(Double-Slit)-1"></a><a class="docs-heading-anchor-permalink" href="#API-Example-4:-Loop-Corrected-Paths-(Double-Slit)" title="Permalink"></a></h2><p>The Go <code>API_EXAMPLE_4</code> loads <code>doubleslit.n4l</code> and finds paths from A1 to B6 with loop corrections. We build the graph in memory from the N4L structure:</p><pre><code class="language-julia hljs">store4 = MemoryStore()
+
+# Build the double-slit graph manually (matching doubleslit.n4l)
+edges = [
+    (&quot;A1&quot;,&quot;A2&quot;), (&quot;A1&quot;,&quot;A3&quot;), (&quot;A2&quot;,&quot;A5&quot;), (&quot;A3&quot;,&quot;A5&quot;),
+    (&quot;A3&quot;,&quot;A6&quot;), (&quot;A4&quot;,&quot;S1&quot;), (&quot;A5&quot;,&quot;S1&quot;), (&quot;A5&quot;,&quot;S2&quot;),
+    (&quot;A6&quot;,&quot;S2&quot;), (&quot;S1&quot;,&quot;B1&quot;), (&quot;S2&quot;,&quot;B2&quot;), (&quot;S2&quot;,&quot;B3&quot;),
+    (&quot;B1&quot;,&quot;B4&quot;), (&quot;B2&quot;,&quot;B4&quot;), (&quot;B2&quot;,&quot;B5&quot;), (&quot;B3&quot;,&quot;B5&quot;),
+    (&quot;B4&quot;,&quot;B6&quot;),
+]
+
+for (src, dst) in edges
+    nfrom = mem_vertex!(store4, src, &quot;double slit example&quot;)
+    nto = mem_vertex!(store4, dst, &quot;double slit example&quot;)
+    mem_edge!(store4, nfrom, &quot;fwd&quot;, nto)
+end
+
+println(&quot;Double slit graph: $(node_count(store4)) nodes, $(link_count(store4)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Double slit graph: 14 nodes, 34 links</code></pre><p>Find paths with loop detection — the Go version uses colliding wavefronts; we use <code>find_paths</code> which separates DAG paths from loop corrections:</p><pre><code class="language-julia hljs">a1_nodes = mem_get_nodes_by_name(store4, &quot;A1&quot;)
+b6_nodes = mem_get_nodes_by_name(store4, &quot;B6&quot;)
+
+if !isempty(a1_nodes) &amp;&amp; !isempty(b6_nodes)
+    result = find_paths(store4, a1_nodes[1].nptr, b6_nodes[1].nptr; max_depth=10)
+
+    println(&quot;-- T R E E --&quot;)
+    println(&quot;DAG paths from A1 to B6: $(length(result.paths))&quot;)
+    for (i, path) in enumerate(result.paths)
+        names = [mem_get_node(store4, p).s for p in path if mem_get_node(store4, p) !== nothing]
+        println(&quot;  Story $i: &quot;, join(names, &quot; → &quot;))
+    end
+
+    println(&quot;\n++ L O O P S ++&quot;)
+    println(&quot;Loop corrections: $(length(result.loops))&quot;)
+    for (i, path) in enumerate(result.loops)
+        names = [mem_get_node(store4, p).s for p in path if mem_get_node(store4, p) !== nothing]
+        println(&quot;  Loop $i: &quot;, join(names, &quot; → &quot;))
+    end
+end</code></pre><pre><code class="nohighlight hljs">-- T R E E --
+DAG paths from A1 to B6: 5
+  Story 1: A1 → A2 → A5 → S1 → B1 → B4 → B6
+  Story 2: A1 → A2 → A5 → S2 → B2 → B4 → B6
+  Story 3: A1 → A3 → A5 → S1 → B1 → B4 → B6
+  Story 4: A1 → A3 → A5 → S2 → B2 → B4 → B6
+  Story 5: A1 → A3 → A6 → S2 → B2 → B4 → B6
+
+++ L O O P S ++
+Loop corrections: 0</code></pre><p>Explore the cone structure to see how the wavefronts expand:</p><pre><code class="language-julia hljs">if !isempty(a1_nodes)
+    for d in [2, 3, 4, 5]
+        fwd_cone = forward_cone(store4, a1_nodes[1].nptr; depth=d)
+        println(&quot;Forward cone depth $d: $(length(fwd_cone.supernodes)) supernodes, $(length(fwd_cone.paths)) paths&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Forward cone depth 2: 3 supernodes, 5 paths
+Forward cone depth 3: 6 supernodes, 10 paths
+Forward cone depth 4: 9 supernodes, 18 paths
+Forward cone depth 5: 11 supernodes, 29 paths</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>These four Go API examples translate naturally to Julia:</p><table><tr><th style="text-align: right">Go API</th><th style="text-align: right">Julia Equivalent</th></tr><tr><td style="text-align: right"><code>SST.Vertex(sst, name, chap)</code></td><td style="text-align: right"><code>mem_vertex!(store, name, chap)</code></td></tr><tr><td style="text-align: right"><code>SST.Edge(sst, from, arrow, to, ctx, w)</code></td><td style="text-align: right"><code>mem_edge!(store, from, arrow, to, ctx, w)</code></td></tr><tr><td style="text-align: right"><code>SST.HubJoin(sst, name, chap, ptrs, arrow, ctx, w)</code></td><td style="text-align: right">Manual hub pattern with <code>mem_vertex!</code> + <code>mem_edge!</code></td></tr><tr><td style="text-align: right"><code>SST.GetFwdPathsAsLinks(sst, ptr, st, depth, limit)</code></td><td style="text-align: right"><code>forward_cone(store, ptr; depth=d)</code></td></tr><tr><td style="text-align: right"><code>SST.GetPathsAndSymmetries(sst, left, right, ...)</code></td><td style="text-align: right"><code>find_paths(store, from, to; max_depth=d)</code></td></tr><tr><td style="text-align: right"><code>SST.WaveFrontsOverlap(sst, left, right, ...)</code></td><td style="text-align: right"><code>find_paths</code> separates <code>.paths</code> from <code>.loops</code></td></tr></table></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../08-rdf-integration/">« Rdf Integration</a><a class="docs-footer-nextpage" href="../10-real-world-examples/">Real World Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 19 March 2026 06:47">Thursday 19 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

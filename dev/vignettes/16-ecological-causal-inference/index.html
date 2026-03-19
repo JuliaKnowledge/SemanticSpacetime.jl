@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Ecological Causal Inference · SemanticSpacetime.jl</title><meta name="title" content="Ecological Causal Inference · SemanticSpacetime.jl"/><meta property="og:title" content="Ecological Causal Inference · SemanticSpacetime.jl"/><meta property="twitter:title" content="Ecological Causal Inference · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/16-ecological-causal-inference/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/16-ecological-causal-inference/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/16-ecological-causal-inference/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li class="is-active"><a class="tocitem" href>Ecological Causal Inference</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#1.-Coral-Reef-Ecosystem-—-The-Domain-Ontology"><span>1. Coral Reef Ecosystem — The Domain Ontology</span></a></li><li><a class="tocitem" href="#2.-DAG-1-—-Confounding:-Does-Herbivory-Protect-Coral?"><span>2. DAG 1 — Confounding: Does Herbivory Protect Coral?</span></a></li><li><a class="tocitem" href="#3.-DAG-2-—-Mediation-and-Overcontrol-Bias"><span>3. DAG 2 — Mediation and Overcontrol Bias</span></a></li><li><a class="tocitem" href="#4.-DAG-3-—-Collider-Bias:-The-Fishing-Paradox"><span>4. DAG 3 — Collider Bias: The Fishing Paradox</span></a></li><li><a class="tocitem" href="#5.-DAG-4-—-Frontdoor-Criterion:-Unobserved-Confounding"><span>5. DAG 4 — Frontdoor Criterion: Unobserved Confounding</span></a></li><li><a class="tocitem" href="#6.-Seychelles-Reef-Case-Study"><span>6. Seychelles Reef Case Study</span></a></li><li><a class="tocitem" href="#7.-Graph-Queries-—-Ecological-Patterns"><span>7. Graph Queries — Ecological Patterns</span></a></li><li><a class="tocitem" href="#8.-Comparing-DAG-Models"><span>8. Comparing DAG Models</span></a></li><li><a class="tocitem" href="#9.-Automated-Backdoor-Path-Detection"><span>9. Automated Backdoor Path Detection</span></a></li><li><a class="tocitem" href="#10.-Detecting-Colliders"><span>10. Detecting Colliders</span></a></li><li><a class="tocitem" href="#11.-Summary-—-SCM-Concepts-Mapped-to-SST"><span>11. Summary — SCM Concepts Mapped to SST</span></a></li><li><a class="tocitem" href="#Discussion"><span>Discussion</span></a></li></ul></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Ecological Causal Inference</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Ecological Causal Inference</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Ecological-Causal-Inference-with-DAGs"><a class="docs-heading-anchor" href="#Ecological-Causal-Inference-with-DAGs">Ecological Causal Inference with DAGs</a><a id="Ecological-Causal-Inference-with-DAGs-1"></a><a class="docs-heading-anchor-permalink" href="#Ecological-Causal-Inference-with-DAGs" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>Causal inference from observational data is a central challenge in ecology. Arif &amp; MacNeil (2023, <em>Ecological Monographs</em>, <strong>93</strong>(1), e1554) introduced the <strong>Structural Causal Model (SCM)</strong> framework — widely used in epidemiology and social sciences — to ecology, showing how <strong>Directed Acyclic Graphs (DAGs)</strong> make causal assumptions explicit and guide correct statistical adjustment.</p><p>This vignette demonstrates how <strong>SemanticSpacetime.jl</strong> can represent and reason about ecological SCMs. SST’s typed arrow system provides a natural mapping:</p><table><tr><th style="text-align: right">SCM Concept</th><th style="text-align: right">SST Arrow Type</th><th style="text-align: right">Example</th></tr><tr><td style="text-align: right">Direct causal effect (X → Y)</td><td style="text-align: right">LEADSTO (<code>then</code>, <code>leads to</code>)</td><td style="text-align: right">Nutrients → Algal cover</td></tr><tr><td style="text-align: right">Structural containment / taxonomy</td><td style="text-align: right">CONTAINS (<code>contain</code>, <code>has-pt</code>)</td><td style="text-align: right">Ecosystem ⊃ Coral reef</td></tr><tr><td style="text-align: right">Measured property / annotation</td><td style="text-align: right">EXPRESS (<code>note</code>, <code>data</code>)</td><td style="text-align: right">Temperature = 28°C</td></tr><tr><td style="text-align: right">Proximity / similarity</td><td style="text-align: right">NEAR (<code>ll</code>, <code>syn</code>)</td><td style="text-align: right">Site A ≈ Site B</td></tr></table><p>We build three progressively complex ecological DAGs from the paper’s framework — confounding, mediation with overcontrol, and collider bias — then use SST graph traversal to identify backdoor paths, valid adjustment sets, and causal versus non-causal pathways.</p><h3 id="Reference"><a class="docs-heading-anchor" href="#Reference">Reference</a><a id="Reference-1"></a><a class="docs-heading-anchor-permalink" href="#Reference" title="Permalink"></a></h3><blockquote><p>Arif, S. &amp; MacNeil, M.A. (2023). Applying the structural causal model framework for observational causal inference in ecology. <em>Ecological Monographs</em>, 93(1), e1554. <a href="https://doi.org/10.1002/ecm.1554">doi:10.1002/ecm.1554</a></p></blockquote><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+add_mandatory_arrows!()
+
+config_dir = let d = joinpath(@__DIR__, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;SSTorytime&quot;, &quot;SSTconfig&quot;)
+    isdir(d) ? d : nothing
+end
+if config_dir !== nothing
+    st = SemanticSpacetime.N4LState()
+    for cf in read_config_files(config_dir)
+        SemanticSpacetime.parse_config_file(cf; st=st)
+    end
+end
+
+store = MemoryStore()
+println(&quot;SemanticSpacetime.jl ecological causal inference vignette&quot;)
+println(&quot;Arrows loaded: config_dir=$(config_dir !== nothing ? &quot;yes&quot; : &quot;no&quot;)&quot;)</code></pre><pre><code class="nohighlight hljs">SemanticSpacetime.jl ecological causal inference vignette
+Arrows loaded: config_dir=yes</code></pre><h2 id="1.-Coral-Reef-Ecosystem-—-The-Domain-Ontology"><a class="docs-heading-anchor" href="#1.-Coral-Reef-Ecosystem-—-The-Domain-Ontology">1. Coral Reef Ecosystem — The Domain Ontology</a><a id="1.-Coral-Reef-Ecosystem-—-The-Domain-Ontology-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Coral-Reef-Ecosystem-—-The-Domain-Ontology" title="Permalink"></a></h2><p>Before building DAGs, we establish the ecological domain. A coral reef ecosystem has biotic components (corals, macroalgae, herbivorous fish), abiotic drivers (temperature, nutrients, light), and human pressures (fishing, land-use). In SST, <strong>CONTAINS</strong> arrows capture this hierarchical structure.</p><pre><code class="language-julia hljs"># ── Ecosystem hierarchy ──────────────────────────────
+ecosystem = mem_vertex!(store, &quot;Coral Reef Ecosystem&quot;, &quot;ecosystem&quot;)
+
+# Biotic components
+biotic    = mem_vertex!(store, &quot;Biotic Components&quot;, &quot;ecosystem&quot;)
+corals    = mem_vertex!(store, &quot;Hard Coral Cover&quot;,  &quot;biotic&quot;)
+macroalgae = mem_vertex!(store, &quot;Macroalgal Cover&quot;, &quot;biotic&quot;)
+herbivores = mem_vertex!(store, &quot;Herbivorous Fish Biomass&quot;, &quot;biotic&quot;)
+turf      = mem_vertex!(store, &quot;Turf Algae Cover&quot;,  &quot;biotic&quot;)
+cca       = mem_vertex!(store, &quot;Crustose Coralline Algae&quot;, &quot;biotic&quot;)
+predators = mem_vertex!(store, &quot;Piscivore Biomass&quot;, &quot;biotic&quot;)
+
+mem_edge!(store, ecosystem, &quot;contain&quot;, biotic)
+for comp in [corals, macroalgae, herbivores, turf, cca, predators]
+    mem_edge!(store, biotic, &quot;contain&quot;, comp)
+end
+
+# Abiotic drivers
+abiotic   = mem_vertex!(store, &quot;Abiotic Drivers&quot;, &quot;ecosystem&quot;)
+temp      = mem_vertex!(store, &quot;Sea Surface Temperature (SST)&quot;, &quot;abiotic&quot;)
+nutrients = mem_vertex!(store, &quot;Dissolved Inorganic Nutrients&quot;, &quot;abiotic&quot;)
+light     = mem_vertex!(store, &quot;Photosynthetically Active Radiation&quot;, &quot;abiotic&quot;)
+depth     = mem_vertex!(store, &quot;Reef Depth&quot;, &quot;abiotic&quot;)
+wave      = mem_vertex!(store, &quot;Wave Exposure&quot;, &quot;abiotic&quot;)
+
+mem_edge!(store, ecosystem, &quot;contain&quot;, abiotic)
+for drv in [temp, nutrients, light, depth, wave]
+    mem_edge!(store, abiotic, &quot;contain&quot;, drv)
+end
+
+# Human pressures
+human     = mem_vertex!(store, &quot;Anthropogenic Pressures&quot;, &quot;ecosystem&quot;)
+fishing   = mem_vertex!(store, &quot;Fishing Pressure&quot;, &quot;human pressures&quot;)
+runoff    = mem_vertex!(store, &quot;Land-based Runoff&quot;, &quot;human pressures&quot;)
+tourism   = mem_vertex!(store, &quot;Tourism Impact&quot;,    &quot;human pressures&quot;)
+climate   = mem_vertex!(store, &quot;Climate Change&quot;,    &quot;human pressures&quot;)
+
+mem_edge!(store, ecosystem, &quot;contain&quot;, human)
+for prs in [fishing, runoff, tourism, climate]
+    mem_edge!(store, human, &quot;contain&quot;, prs)
+end
+
+# Ecosystem states (outcomes)
+states    = mem_vertex!(store, &quot;Ecosystem States&quot;, &quot;ecosystem&quot;)
+coral_dom = mem_vertex!(store, &quot;Coral-dominated State&quot;, &quot;states&quot;)
+algal_dom = mem_vertex!(store, &quot;Algal-dominated State&quot;, &quot;states&quot;)
+regime_shift = mem_vertex!(store, &quot;Regime Shift&quot;, &quot;states&quot;)
+
+mem_edge!(store, ecosystem, &quot;contain&quot;, states)
+for st in [coral_dom, algal_dom, regime_shift]
+    mem_edge!(store, states, &quot;contain&quot;, st)
+end
+
+println(&quot;Domain ontology: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Domain ontology: 23 nodes, 44 links</code></pre><h3 id="Annotating-variables-with-measurement-properties"><a class="docs-heading-anchor" href="#Annotating-variables-with-measurement-properties">Annotating variables with measurement properties</a><a id="Annotating-variables-with-measurement-properties-1"></a><a class="docs-heading-anchor-permalink" href="#Annotating-variables-with-measurement-properties" title="Permalink"></a></h3><p>In the SCM framework, variables have types (continuous, categorical) and observability status (measured, unmeasured/latent). We use <strong>EXPRESS</strong> arrows to annotate these properties.</p><pre><code class="language-julia hljs"># Variable metadata via EXPRESS arrows
+variable_meta = [
+    (corals,     &quot;Measured: % benthic cover, continuous&quot;),
+    (macroalgae, &quot;Measured: % benthic cover, continuous&quot;),
+    (herbivores, &quot;Measured: kg/ha, continuous&quot;),
+    (temp,       &quot;Measured: °C, continuous&quot;),
+    (nutrients,  &quot;Measured: μmol/L, continuous&quot;),
+    (fishing,    &quot;Measured: boats/km², continuous&quot;),
+    (runoff,     &quot;Estimated: proxy via land-use, semi-quantitative&quot;),
+    (depth,      &quot;Measured: metres, continuous&quot;),
+    (predators,  &quot;Measured: kg/ha, continuous&quot;),
+]
+
+for (node, desc) in variable_meta
+    meta = mem_vertex!(store, desc, &quot;variable metadata&quot;)
+    mem_edge!(store, node, &quot;note&quot;, meta)
+end
+
+println(&quot;Variable annotations added&quot;)</code></pre><pre><code class="nohighlight hljs">Variable annotations added</code></pre><h2 id="2.-DAG-1-—-Confounding:-Does-Herbivory-Protect-Coral?"><a class="docs-heading-anchor" href="#2.-DAG-1-—-Confounding:-Does-Herbivory-Protect-Coral?">2. DAG 1 — Confounding: Does Herbivory Protect Coral?</a><a id="2.-DAG-1-—-Confounding:-Does-Herbivory-Protect-Coral?-1"></a><a class="docs-heading-anchor-permalink" href="#2.-DAG-1-—-Confounding:-Does-Herbivory-Protect-Coral?" title="Permalink"></a></h2><p>The central ecological question: <strong>What is the causal effect of herbivorous fish biomass on hard coral cover?</strong></p><p>A naïve regression of coral cover on herbivore biomass might show a positive association. But <strong>sea surface temperature</strong> (SST) affects <em>both</em> herbivore biomass (warm waters support more fish) <em>and</em> coral cover (thermal stress bleaches corals). If we fail to adjust for temperature, our estimate is confounded.</p><h3 id="DAG-structure"><a class="docs-heading-anchor" href="#DAG-structure">DAG structure</a><a id="DAG-structure-1"></a><a class="docs-heading-anchor-permalink" href="#DAG-structure" title="Permalink"></a></h3><pre><code class="nohighlight hljs">     Temperature
+      /       \
+     v         v
+Herbivores → Coral Cover</code></pre><p>In SST, causal arrows are <strong>LEADSTO</strong>:</p><pre><code class="language-julia hljs"># ── DAG 1: Confounding ──────────────────────────────
+dag1 = mem_vertex!(store, &quot;DAG 1: Confounding&quot;, &quot;causal models&quot;)
+dag1_desc = mem_vertex!(store,
+    &quot;Research question: What is the causal effect of herbivore &quot; *
+    &quot;biomass on coral cover? Confounder: sea surface temperature.&quot;,
+    &quot;model descriptions&quot;)
+mem_edge!(store, dag1, &quot;note&quot;, dag1_desc)
+
+# Causal arrows (LEADSTO)
+mem_edge!(store, temp, &quot;then&quot;, herbivores)   # T → H
+mem_edge!(store, temp, &quot;then&quot;, corals)       # T → C  (thermal stress)
+mem_edge!(store, herbivores, &quot;then&quot;, corals) # H → C  (grazing algae → space for coral)
+
+# Tag edges to this DAG
+mem_edge!(store, dag1, &quot;contain&quot;, temp)
+mem_edge!(store, dag1, &quot;contain&quot;, herbivores)
+mem_edge!(store, dag1, &quot;contain&quot;, corals)
+
+println(&quot;DAG 1 built: Temperature confounds Herbivores → Coral Cover&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 1 built: Temperature confounds Herbivores → Coral Cover</code></pre><h3 id="Identifying-backdoor-paths"><a class="docs-heading-anchor" href="#Identifying-backdoor-paths">Identifying backdoor paths</a><a id="Identifying-backdoor-paths-1"></a><a class="docs-heading-anchor-permalink" href="#Identifying-backdoor-paths" title="Permalink"></a></h3><p>A <strong>backdoor path</strong> from Herbivores to Coral Cover is any path that starts with an arrow <em>into</em> Herbivores. Here: Herbivores ← Temperature → Coral Cover. We can find this using SST’s path-finding and cone search.</p><pre><code class="language-julia hljs"># Forward cone from Temperature — shows everything T causally affects
+cone_temp = forward_cone(store, temp.nptr; depth=2)
+println(&quot;Forward cone from Temperature:&quot;)
+seen = Set{NodePtr}()
+for path in cone_temp.paths
+    for lnk in path
+        lnk.dst in seen &amp;&amp; continue
+        push!(seen, lnk.dst)
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing &amp;&amp; println(&quot;  → $(n.s) [$(n.chap)]&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Forward cone from Temperature:
+  → Herbivorous Fish Biomass [biotic]
+  → Hard Coral Cover [biotic]
+  → Measured: kg/ha, continuous [variable metadata]
+  → Measured: % benthic cover, continuous [variable metadata]
+  → Measured: °C, continuous [variable metadata]</code></pre><pre><code class="language-julia hljs"># Backward cone from Coral Cover — what causally influences coral?
+cone_coral = backward_cone(store, corals.nptr; depth=2)
+println(&quot;Backward cone into Coral Cover:&quot;)
+seen2 = Set{NodePtr}()
+for path in cone_coral.paths
+    for lnk in path
+        lnk.dst in seen2 &amp;&amp; continue
+        push!(seen2, lnk.dst)
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing &amp;&amp; println(&quot;  ← $(n.s) [$(n.chap)]&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Backward cone into Coral Cover:
+  ← Biotic Components [ecosystem]
+  ← Coral Reef Ecosystem [ecosystem]
+  ← DAG 1: Confounding [causal models]
+  ← Sea Surface Temperature (SST) [abiotic]
+  ← Abiotic Drivers [ecosystem]
+  ← Herbivorous Fish Biomass [biotic]</code></pre><pre><code class="language-julia hljs"># Find paths from Herbivores to Coral (should include direct path)
+pr = find_paths(store, herbivores.nptr, corals.nptr; max_depth=5)
+println(&quot;Paths from Herbivores → Coral Cover: $(length(pr.paths))&quot;)
+for (i, path) in enumerate(pr.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : &quot;?&quot; end
+             for np in path]
+    println(&quot;  Path $i: $(join(names, &quot; → &quot;))&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Paths from Herbivores → Coral Cover: 1
+  Path 1: Herbivorous Fish Biomass → Hard Coral Cover</code></pre><h3 id="The-adjustment-set"><a class="docs-heading-anchor" href="#The-adjustment-set">The adjustment set</a><a id="The-adjustment-set-1"></a><a class="docs-heading-anchor-permalink" href="#The-adjustment-set" title="Permalink"></a></h3><p>The <strong>backdoor criterion</strong> says: to estimate H → C, block all backdoor paths. The only backdoor path is H ← T → C. Conditioning on Temperature blocks it. We represent this finding as metadata.</p><pre><code class="language-julia hljs"># Record the adjustment set as a property of the DAG model
+adj1 = mem_vertex!(store, &quot;Adjustment set: {Temperature}&quot;, &quot;adjustment sets&quot;)
+mem_edge!(store, dag1, &quot;has-pt&quot;, adj1)
+
+# Record the identified bias
+bias1 = mem_vertex!(store, &quot;Confounding bias via Temperature&quot;, &quot;bias types&quot;)
+mem_edge!(store, dag1, &quot;note&quot;, bias1)
+
+println(&quot;DAG 1 analysis complete:&quot;)
+println(&quot;  Exposure: Herbivorous Fish Biomass&quot;)
+println(&quot;  Outcome:  Hard Coral Cover&quot;)
+println(&quot;  Confounder: Sea Surface Temperature&quot;)
+println(&quot;  Adjustment set: {Temperature}&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 1 analysis complete:
+  Exposure: Herbivorous Fish Biomass
+  Outcome:  Hard Coral Cover
+  Confounder: Sea Surface Temperature
+  Adjustment set: {Temperature}</code></pre><h2 id="3.-DAG-2-—-Mediation-and-Overcontrol-Bias"><a class="docs-heading-anchor" href="#3.-DAG-2-—-Mediation-and-Overcontrol-Bias">3. DAG 2 — Mediation and Overcontrol Bias</a><a id="3.-DAG-2-—-Mediation-and-Overcontrol-Bias-1"></a><a class="docs-heading-anchor-permalink" href="#3.-DAG-2-—-Mediation-and-Overcontrol-Bias" title="Permalink"></a></h2><p>Now we extend the model. Herbivores don’t directly affect coral cover; they <strong>reduce macroalgal cover</strong>, which in turn <strong>competes with corals</strong> for space. Macroalgae is a <strong>mediator</strong> on the causal pathway.</p><h3 id="DAG-structure-2"><a class="docs-heading-anchor" href="#DAG-structure-2">DAG structure</a><a class="docs-heading-anchor-permalink" href="#DAG-structure-2" title="Permalink"></a></h3><pre><code class="nohighlight hljs">     Temperature
+      /       \
+     v         v
+Herbivores → Macroalgae → Coral Cover
+                 ^
+                 |
+             Nutrients</code></pre><p>If we adjust for the mediator (macroalgae), we <strong>block the causal pathway</strong> we’re trying to estimate — this is <strong>overcontrol bias</strong>.</p><pre><code class="language-julia hljs"># ── DAG 2: Mediation &amp; Overcontrol ──────────────────
+dag2 = mem_vertex!(store, &quot;DAG 2: Mediation &amp; Overcontrol&quot;, &quot;causal models&quot;)
+dag2_desc = mem_vertex!(store,
+    &quot;Research question: Same as DAG 1, but herbivory acts through &quot; *
+    &quot;macroalgae reduction (mediator). Adjusting for macroalgae &quot; *
+    &quot;blocks the causal pathway (overcontrol bias).&quot;,
+    &quot;model descriptions&quot;)
+mem_edge!(store, dag2, &quot;note&quot;, dag2_desc)
+
+# Additional causal arrows
+mem_edge!(store, herbivores, &quot;then&quot;, macroalgae)  # H → M  (grazing reduces algae)
+mem_edge!(store, macroalgae, &quot;then&quot;, corals)      # M → C  (competition for space)
+mem_edge!(store, nutrients, &quot;then&quot;, macroalgae)    # N → M  (eutrophication)
+mem_edge!(store, nutrients, &quot;then&quot;, corals)        # N → C  (direct nutrient stress)
+
+mem_edge!(store, dag2, &quot;contain&quot;, herbivores)
+mem_edge!(store, dag2, &quot;contain&quot;, macroalgae)
+mem_edge!(store, dag2, &quot;contain&quot;, corals)
+mem_edge!(store, dag2, &quot;contain&quot;, temp)
+mem_edge!(store, dag2, &quot;contain&quot;, nutrients)
+
+println(&quot;DAG 2 built: Herbivores → Macroalgae → Coral Cover&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 2 built: Herbivores → Macroalgae → Coral Cover</code></pre><h3 id="Tracing-causal-pathways"><a class="docs-heading-anchor" href="#Tracing-causal-pathways">Tracing causal pathways</a><a id="Tracing-causal-pathways-1"></a><a class="docs-heading-anchor-permalink" href="#Tracing-causal-pathways" title="Permalink"></a></h3><pre><code class="language-julia hljs"># The causal chain: Herbivores → Macroalgae → Coral
+pr2a = find_paths(store, herbivores.nptr, macroalgae.nptr; max_depth=3)
+pr2b = find_paths(store, macroalgae.nptr, corals.nptr; max_depth=3)
+
+println(&quot;Herbivores → Macroalgae paths: $(length(pr2a.paths))&quot;)
+for (i, p) in enumerate(pr2a.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : &quot;?&quot; end for np in p]
+    println(&quot;  $i: $(join(names, &quot; → &quot;))&quot;)
+end
+
+println(&quot;Macroalgae → Coral Cover paths: $(length(pr2b.paths))&quot;)
+for (i, p) in enumerate(pr2b.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : &quot;?&quot; end for np in p]
+    println(&quot;  $i: $(join(names, &quot; → &quot;))&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Herbivores → Macroalgae paths: 1
+  1: Herbivorous Fish Biomass → Macroalgal Cover
+Macroalgae → Coral Cover paths: 1
+  1: Macroalgal Cover → Hard Coral Cover</code></pre><pre><code class="language-julia hljs"># Full causal paths from Herbivores to Coral Cover (through the mediator)
+pr2_full = find_paths(store, herbivores.nptr, corals.nptr; max_depth=5)
+println(&quot;All paths Herbivores → Coral Cover: $(length(pr2_full.paths))&quot;)
+for (i, p) in enumerate(pr2_full.paths)
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : &quot;?&quot; end for np in p]
+    println(&quot;  $i: $(join(names, &quot; → &quot;))&quot;)
+end</code></pre><pre><code class="nohighlight hljs">All paths Herbivores → Coral Cover: 2
+  1: Herbivorous Fish Biomass → Hard Coral Cover
+  2: Herbivorous Fish Biomass → Macroalgal Cover → Hard Coral Cover</code></pre><h3 id="Correct-vs-incorrect-adjustment"><a class="docs-heading-anchor" href="#Correct-vs-incorrect-adjustment">Correct vs incorrect adjustment</a><a id="Correct-vs-incorrect-adjustment-1"></a><a class="docs-heading-anchor-permalink" href="#Correct-vs-incorrect-adjustment" title="Permalink"></a></h3><pre><code class="language-julia hljs"># DAG 2 adjustment analysis
+adj2_correct = mem_vertex!(store,
+    &quot;Correct adjustment set: {Temperature} — blocks confounding, preserves mediation&quot;,
+    &quot;adjustment sets&quot;)
+adj2_wrong = mem_vertex!(store,
+    &quot;WRONG adjustment: {Temperature, Macroalgae} — overcontrol bias, &quot; *
+    &quot;blocks the causal pathway H → M → C&quot;,
+    &quot;adjustment sets&quot;)
+
+mem_edge!(store, dag2, &quot;has-pt&quot;, adj2_correct)
+mem_edge!(store, dag2, &quot;has-pt&quot;, adj2_wrong)
+
+bias2 = mem_vertex!(store, &quot;Overcontrol bias via conditioning on mediator&quot;, &quot;bias types&quot;)
+mem_edge!(store, dag2, &quot;note&quot;, bias2)
+
+println(&quot;DAG 2 analysis:&quot;)
+println(&quot;  ✓ Correct: adjust for {Temperature}&quot;)
+println(&quot;  ✗ Wrong:   adjust for {Temperature, Macroalgae} (overcontrol!)&quot;)
+println(&quot;  Reason: Macroalgae is on the causal pathway H → M → C&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 2 analysis:
+  ✓ Correct: adjust for {Temperature}
+  ✗ Wrong:   adjust for {Temperature, Macroalgae} (overcontrol!)
+  Reason: Macroalgae is on the causal pathway H → M → C</code></pre><h2 id="4.-DAG-3-—-Collider-Bias:-The-Fishing-Paradox"><a class="docs-heading-anchor" href="#4.-DAG-3-—-Collider-Bias:-The-Fishing-Paradox">4. DAG 3 — Collider Bias: The Fishing Paradox</a><a id="4.-DAG-3-—-Collider-Bias:-The-Fishing-Paradox-1"></a><a class="docs-heading-anchor-permalink" href="#4.-DAG-3-—-Collider-Bias:-The-Fishing-Paradox" title="Permalink"></a></h2><p>A more subtle bias. Suppose we study the effect of nutrients on coral cover. Both <strong>nutrients</strong> and <strong>wave exposure</strong> independently affect <strong>reef structural complexity</strong> (a collider). If we condition on structural complexity, we open a spurious path between nutrients and wave exposure — and since wave exposure affects coral cover, this creates <strong>collider bias</strong>.</p><h3 id="DAG-structure-3"><a class="docs-heading-anchor" href="#DAG-structure-3">DAG structure</a><a class="docs-heading-anchor-permalink" href="#DAG-structure-3" title="Permalink"></a></h3><pre><code class="nohighlight hljs">Nutrients ──────────→ Coral Cover
+    \                     ^
+     \                    |
+      v                   |
+  Structural Complexity   |
+      ^                   |
+     /                    |
+    /                     |
+Wave Exposure ───────────┘</code></pre><p>Structural complexity is a <strong>collider</strong> on the path Nutrients → Structural Complexity ← Wave Exposure.</p><pre><code class="language-julia hljs"># ── DAG 3: Collider Bias ────────────────────────────
+dag3 = mem_vertex!(store, &quot;DAG 3: Collider Bias&quot;, &quot;causal models&quot;)
+dag3_desc = mem_vertex!(store,
+    &quot;Research question: What is the causal effect of nutrient &quot; *
+    &quot;enrichment on coral cover? Structural complexity is a collider &quot; *
+    &quot;influenced by both nutrients and wave exposure. Conditioning &quot; *
+    &quot;on it induces spurious association.&quot;,
+    &quot;model descriptions&quot;)
+mem_edge!(store, dag3, &quot;note&quot;, dag3_desc)
+
+# New variable
+complexity = mem_vertex!(store, &quot;Reef Structural Complexity&quot;, &quot;biotic&quot;)
+
+# Causal arrows
+mem_edge!(store, nutrients, &quot;then&quot;, complexity)   # N → SC
+mem_edge!(store, wave, &quot;then&quot;, complexity)        # W → SC (collider!)
+mem_edge!(store, wave, &quot;then&quot;, corals)            # W → C
+# nutrients → corals already exists from DAG 2
+
+mem_edge!(store, dag3, &quot;contain&quot;, nutrients)
+mem_edge!(store, dag3, &quot;contain&quot;, wave)
+mem_edge!(store, dag3, &quot;contain&quot;, complexity)
+mem_edge!(store, dag3, &quot;contain&quot;, corals)
+
+println(&quot;DAG 3 built: Nutrients → Coral Cover with collider (Structural Complexity)&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 3 built: Nutrients → Coral Cover with collider (Structural Complexity)</code></pre><h3 id="Identifying-the-collider"><a class="docs-heading-anchor" href="#Identifying-the-collider">Identifying the collider</a><a id="Identifying-the-collider-1"></a><a class="docs-heading-anchor-permalink" href="#Identifying-the-collider" title="Permalink"></a></h3><p>A <strong>collider</strong> is a node with two or more arrows pointing <em>into</em> it from different paths. We can detect this by examining the backward cone.</p><pre><code class="language-julia hljs"># Backward cone into Structural Complexity
+cone_sc = backward_cone(store, complexity.nptr; depth=1)
+parents = Set{String}()
+for path in cone_sc.paths
+    for lnk in path
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing &amp;&amp; push!(parents, n.s)
+    end
+end
+println(&quot;Parents of Structural Complexity (potential collider parents):&quot;)
+for p in parents
+    println(&quot;  ← $p&quot;)
+end
+if length(parents) &gt;= 2
+    println(&quot;⚠  Structural Complexity is a COLLIDER — conditioning on it is dangerous!&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Parents of Structural Complexity (potential collider parents):
+  ← DAG 3: Collider Bias
+  ← Wave Exposure
+  ← Dissolved Inorganic Nutrients
+⚠  Structural Complexity is a COLLIDER — conditioning on it is dangerous!</code></pre><h3 id="Correct-adjustment"><a class="docs-heading-anchor" href="#Correct-adjustment">Correct adjustment</a><a id="Correct-adjustment-1"></a><a class="docs-heading-anchor-permalink" href="#Correct-adjustment" title="Permalink"></a></h3><pre><code class="language-julia hljs">adj3_correct = mem_vertex!(store,
+    &quot;Correct adjustment set: {} (empty) — no confounders to block&quot;,
+    &quot;adjustment sets&quot;)
+adj3_wrong = mem_vertex!(store,
+    &quot;WRONG adjustment: {Structural Complexity} — collider bias, opens &quot; *
+    &quot;Nutrients → SC ← Wave → Coral spurious path&quot;,
+    &quot;adjustment sets&quot;)
+
+mem_edge!(store, dag3, &quot;has-pt&quot;, adj3_correct)
+mem_edge!(store, dag3, &quot;has-pt&quot;, adj3_wrong)
+
+bias3 = mem_vertex!(store, &quot;Collider bias via conditioning on Structural Complexity&quot;, &quot;bias types&quot;)
+mem_edge!(store, dag3, &quot;note&quot;, bias3)
+
+println(&quot;DAG 3 analysis:&quot;)
+println(&quot;  ✓ Correct: adjust for {} (nothing)&quot;)
+println(&quot;  ✗ Wrong:   adjust for {Structural Complexity} (collider bias!)&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 3 analysis:
+  ✓ Correct: adjust for {} (nothing)
+  ✗ Wrong:   adjust for {Structural Complexity} (collider bias!)</code></pre><h2 id="5.-DAG-4-—-Frontdoor-Criterion:-Unobserved-Confounding"><a class="docs-heading-anchor" href="#5.-DAG-4-—-Frontdoor-Criterion:-Unobserved-Confounding">5. DAG 4 — Frontdoor Criterion: Unobserved Confounding</a><a id="5.-DAG-4-—-Frontdoor-Criterion:-Unobserved-Confounding-1"></a><a class="docs-heading-anchor-permalink" href="#5.-DAG-4-—-Frontdoor-Criterion:-Unobserved-Confounding" title="Permalink"></a></h2><p>The most challenging scenario. Suppose <strong>Fishing Pressure</strong> affects both <strong>Herbivore Biomass</strong> and <strong>Coral Cover</strong> (via reef destruction), but fishing is <strong>unobserved</strong> (no reliable data). The backdoor criterion fails. However, if we observe the <strong>mediator</strong> (macroalgae) and it satisfies certain conditions, the <strong>frontdoor criterion</strong> allows identification of the causal effect.</p><h3 id="DAG-structure-4"><a class="docs-heading-anchor" href="#DAG-structure-4">DAG structure</a><a class="docs-heading-anchor-permalink" href="#DAG-structure-4" title="Permalink"></a></h3><pre><code class="nohighlight hljs">  Fishing (Unobserved)
+      /         \
+     v           v
+Herbivores → Macroalgae → Coral Cover</code></pre><pre><code class="language-julia hljs"># ── DAG 4: Frontdoor Criterion ──────────────────────
+dag4 = mem_vertex!(store, &quot;DAG 4: Frontdoor Criterion&quot;, &quot;causal models&quot;)
+dag4_desc = mem_vertex!(store,
+    &quot;Research question: Estimate the causal effect of herbivory on coral &quot; *
+    &quot;when fishing pressure (unobserved confounder) affects both. &quot; *
+    &quot;The frontdoor criterion via macroalgae can identify the effect.&quot;,
+    &quot;model descriptions&quot;)
+mem_edge!(store, dag4, &quot;note&quot;, dag4_desc)
+
+# Mark fishing as unobserved
+fishing_latent = mem_vertex!(store, &quot;Unmeasured: no reliable fishing data&quot;, &quot;variable metadata&quot;)
+mem_edge!(store, fishing, &quot;note&quot;, fishing_latent)
+
+# Causal arrows (some already exist)
+mem_edge!(store, fishing, &quot;then&quot;, herbivores)  # F → H
+mem_edge!(store, fishing, &quot;then&quot;, corals)      # F → C (direct reef destruction)
+
+mem_edge!(store, dag4, &quot;contain&quot;, fishing)
+mem_edge!(store, dag4, &quot;contain&quot;, herbivores)
+mem_edge!(store, dag4, &quot;contain&quot;, macroalgae)
+mem_edge!(store, dag4, &quot;contain&quot;, corals)
+
+println(&quot;DAG 4 built: Unobserved fishing confounds Herbivores → Coral&quot;)</code></pre><pre><code class="nohighlight hljs">DAG 4 built: Unobserved fishing confounds Herbivores → Coral</code></pre><h3 id="Frontdoor-analysis"><a class="docs-heading-anchor" href="#Frontdoor-analysis">Frontdoor analysis</a><a id="Frontdoor-analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Frontdoor-analysis" title="Permalink"></a></h3><p>The frontdoor criterion requires: 1. The mediator (Macroalgae) fully captures the effect of Herbivores on Coral 2. No unblocked backdoor path from Herbivores to Macroalgae 3. All backdoor paths from Macroalgae to Coral are blocked by Herbivores</p><pre><code class="language-julia hljs"># Check path structure for frontdoor conditions
+println(&quot;Frontdoor criterion analysis:&quot;)
+println(&quot;─&quot;^50)
+
+# Condition 1: H → M path exists and captures the effect
+pr4a = find_paths(store, herbivores.nptr, macroalgae.nptr; max_depth=3)
+println(&quot;1. H → M paths: $(length(pr4a.paths))&quot;)
+for p in pr4a.paths
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : &quot;?&quot; end for np in p]
+    println(&quot;   $(join(names, &quot; → &quot;))&quot;)
+end
+
+# Condition 2: Check backdoor paths into Macroalgae (not through H)
+cone_macro_back = backward_cone(store, macroalgae.nptr; depth=2)
+macro_parents = Set{String}()
+for path in cone_macro_back.paths
+    for lnk in path
+        n = mem_get_node(store, lnk.dst)
+        n !== nothing &amp;&amp; push!(macro_parents, n.s)
+    end
+end
+println(&quot;2. Causes of Macroalgae: $(collect(macro_parents))&quot;)
+
+# Condition 3: M → C path
+pr4b = find_paths(store, macroalgae.nptr, corals.nptr; max_depth=3)
+println(&quot;3. M → C paths: $(length(pr4b.paths))&quot;)
+for p in pr4b.paths
+    names = [let n = mem_get_node(store, np); n !== nothing ? n.s : &quot;?&quot; end for np in p]
+    println(&quot;   $(join(names, &quot; → &quot;))&quot;)
+end
+
+adj4 = mem_vertex!(store,
+    &quot;Frontdoor identification via Macroalgae: &quot; *
+    &quot;P(C|do(H)) = Σ_M P(M|H) Σ_H&#39; P(C|M,H&#39;) P(H&#39;)&quot;,
+    &quot;adjustment sets&quot;)
+mem_edge!(store, dag4, &quot;has-pt&quot;, adj4)
+
+println(&quot;\n✓ Frontdoor criterion applicable via Macroalgae mediator&quot;)</code></pre><pre><code class="nohighlight hljs">Frontdoor criterion analysis:
+──────────────────────────────────────────────────
+1. H → M paths: 1
+   Herbivorous Fish Biomass → Macroalgal Cover
+2. Causes of Macroalgae: [&quot;Sea Surface Temperature (SST)&quot;, &quot;DAG 4: Frontdoor Criterion&quot;, &quot;DAG 2: Mediation &amp; Overcontrol&quot;, &quot;Coral Reef Ecosystem&quot;, &quot;Herbivorous Fish Biomass&quot;, &quot;Abiotic Drivers&quot;, &quot;DAG 3: Collider Bias&quot;, &quot;Dissolved Inorganic Nutrients&quot;, &quot;Biotic Components&quot;, &quot;DAG 1: Confounding&quot;, &quot;Fishing Pressure&quot;]
+3. M → C paths: 1
+   Macroalgal Cover → Hard Coral Cover
+
+✓ Frontdoor criterion applicable via Macroalgae mediator</code></pre><h2 id="6.-Seychelles-Reef-Case-Study"><a class="docs-heading-anchor" href="#6.-Seychelles-Reef-Case-Study">6. Seychelles Reef Case Study</a><a id="6.-Seychelles-Reef-Case-Study-1"></a><a class="docs-heading-anchor-permalink" href="#6.-Seychelles-Reef-Case-Study" title="Permalink"></a></h2><p>Arif &amp; MacNeil (2023) drew inspiration from real-world coral reef studies, particularly regime shifts in the Seychelles following the 1998 mass bleaching event. Let us build a concrete case study.</p><pre><code class="language-julia hljs"># ── Seychelles study sites ───────────────────────────
+sites = Dict{String, Any}()
+site_data = [
+    (&quot;Anse Royale&quot;,       &quot;Inner granitic&quot;, &quot;coral-dominated&quot;,  &quot;low&quot;),
+    (&quot;Baie Ternay&quot;,       &quot;Inner granitic&quot;, &quot;coral-dominated&quot;,  &quot;low&quot;),
+    (&quot;Anse Soleil&quot;,       &quot;Inner granitic&quot;, &quot;algal-dominated&quot;,  &quot;medium&quot;),
+    (&quot;Cousin Island&quot;,     &quot;Inner granitic&quot;, &quot;coral-dominated&quot;,  &quot;low&quot;),
+    (&quot;Praslin North&quot;,     &quot;Inner granitic&quot;, &quot;algal-dominated&quot;,  &quot;high&quot;),
+    (&quot;Aldabra Atoll&quot;,     &quot;Outer coralline&quot;, &quot;coral-dominated&quot;, &quot;none&quot;),
+    (&quot;Cosmoledo Atoll&quot;,   &quot;Outer coralline&quot;, &quot;coral-dominated&quot;, &quot;none&quot;),
+    (&quot;Farquhar Atoll&quot;,    &quot;Outer coralline&quot;, &quot;coral-dominated&quot;, &quot;low&quot;),
+    (&quot;St. Pierre&quot;,        &quot;Inner granitic&quot;, &quot;algal-dominated&quot;,  &quot;medium&quot;),
+    (&quot;Curieuse&quot;,          &quot;Inner granitic&quot;, &quot;coral-dominated&quot;,  &quot;low&quot;),
+    (&quot;Mahé East&quot;,         &quot;Inner granitic&quot;, &quot;algal-dominated&quot;,  &quot;high&quot;),
+    (&quot;Mahé West&quot;,         &quot;Inner granitic&quot;, &quot;coral-dominated&quot;,  &quot;medium&quot;),
+]
+
+for (name, island_type, state, fishing_lvl) in site_data
+    site = mem_vertex!(store, name, &quot;study sites&quot;)
+    sites[name] = site
+
+    # Island type classification
+    type_node = mem_vertex!(store, island_type, &quot;site classification&quot;)
+    mem_edge!(store, type_node, &quot;contain&quot;, site)
+
+    # Ecosystem state
+    state_node = state == &quot;coral-dominated&quot; ? coral_dom : algal_dom
+    mem_edge!(store, site, &quot;then&quot;, state_node)  # site leads to observed state
+
+    # Fishing pressure level
+    fish_node = mem_vertex!(store, &quot;fishing: $fishing_lvl&quot;, &quot;site properties&quot;)
+    mem_edge!(store, site, &quot;note&quot;, fish_node)
+end
+
+println(&quot;$(length(sites)) Seychelles study sites created&quot;)</code></pre><pre><code class="nohighlight hljs">12 Seychelles study sites created</code></pre><h3 id="Observed-measurements-at-each-site"><a class="docs-heading-anchor" href="#Observed-measurements-at-each-site">Observed measurements at each site</a><a id="Observed-measurements-at-each-site-1"></a><a class="docs-heading-anchor-permalink" href="#Observed-measurements-at-each-site" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Simulated ecological measurements (inspired by Seychelles reef data)
+measurements = [
+    # (site, coral%, macroalgae%, herbivore_kg_ha, temp_°C, nutrients_μmol)
+    (&quot;Anse Royale&quot;,     42, 15, 85, 27.8, 0.4),
+    (&quot;Baie Ternay&quot;,     55, 8,  120, 27.5, 0.3),
+    (&quot;Anse Soleil&quot;,     12, 52, 30,  28.5, 1.2),
+    (&quot;Cousin Island&quot;,   48, 10, 110, 27.6, 0.3),
+    (&quot;Praslin North&quot;,   8,  65, 15,  29.0, 1.8),
+    (&quot;Aldabra Atoll&quot;,   62, 5,  150, 27.2, 0.2),
+    (&quot;Cosmoledo Atoll&quot;, 58, 7,  140, 27.3, 0.2),
+    (&quot;Farquhar Atoll&quot;,  50, 12, 100, 27.7, 0.4),
+    (&quot;St. Pierre&quot;,      10, 58, 25,  28.8, 1.5),
+    (&quot;Curieuse&quot;,        45, 12, 95,  27.7, 0.5),
+    (&quot;Mahé East&quot;,       6,  70, 12,  29.2, 2.0),
+    (&quot;Mahé West&quot;,       35, 22, 70,  28.0, 0.7),
+]
+
+for (name, coral_pct, algae_pct, herb_biomass, sst_val, nut_val) in measurements
+    site = sites[name]
+
+    coral_obs = mem_vertex!(store, &quot;coral cover: $(coral_pct)%&quot;, &quot;observations&quot;)
+    algae_obs = mem_vertex!(store, &quot;macroalgae cover: $(algae_pct)%&quot;, &quot;observations&quot;)
+    herb_obs  = mem_vertex!(store, &quot;herbivore biomass: $(herb_biomass) kg/ha&quot;, &quot;observations&quot;)
+    temp_obs  = mem_vertex!(store, &quot;SST: $(sst_val)°C&quot;, &quot;observations&quot;)
+    nut_obs   = mem_vertex!(store, &quot;nutrients: $(nut_val) μmol/L&quot;, &quot;observations&quot;)
+
+    mem_edge!(store, site, &quot;has-pt&quot;, coral_obs)
+    mem_edge!(store, site, &quot;has-pt&quot;, algae_obs)
+    mem_edge!(store, site, &quot;has-pt&quot;, herb_obs)
+    mem_edge!(store, site, &quot;has-pt&quot;, temp_obs)
+    mem_edge!(store, site, &quot;has-pt&quot;, nut_obs)
+end
+
+println(&quot;Measurements recorded for all sites&quot;)
+println(&quot;Total graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Measurements recorded for all sites
+Total graph: 122 nodes, 338 links</code></pre><h2 id="7.-Graph-Queries-—-Ecological-Patterns"><a class="docs-heading-anchor" href="#7.-Graph-Queries-—-Ecological-Patterns">7. Graph Queries — Ecological Patterns</a><a id="7.-Graph-Queries-—-Ecological-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#7.-Graph-Queries-—-Ecological-Patterns" title="Permalink"></a></h2><h3 id="7a.-Which-sites-are-coral-dominated-vs-algal-dominated?"><a class="docs-heading-anchor" href="#7a.-Which-sites-are-coral-dominated-vs-algal-dominated?">7a. Which sites are coral-dominated vs algal-dominated?</a><a id="7a.-Which-sites-are-coral-dominated-vs-algal-dominated?-1"></a><a class="docs-heading-anchor-permalink" href="#7a.-Which-sites-are-coral-dominated-vs-algal-dominated?" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Forward cone from each ecosystem state
+for (label, state_node) in [(&quot;Coral-dominated&quot;, coral_dom), (&quot;Algal-dominated&quot;, algal_dom)]
+    cone = backward_cone(store, state_node.nptr; depth=1)
+    site_names = String[]
+    seen = Set{NodePtr}()
+    for path in cone.paths
+        for lnk in path
+            lnk.dst in seen &amp;&amp; continue
+            push!(seen, lnk.dst)
+            n = mem_get_node(store, lnk.dst)
+            if n !== nothing &amp;&amp; n.chap == &quot;study sites&quot;
+                push!(site_names, n.s)
+            end
+        end
+    end
+    println(&quot;$label: $(join(site_names, &quot;, &quot;))&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Coral-dominated: Anse Royale, Baie Ternay, Cousin Island, Aldabra Atoll, Cosmoledo Atoll, Farquhar Atoll, Curieuse, Mahé West
+Algal-dominated: Anse Soleil, Praslin North, St. Pierre, Mahé East</code></pre><h3 id="7b.-Sites-with-high-macroalgae-(\\50%)"><a class="docs-heading-anchor" href="#7b.-Sites-with-high-macroalgae-(\\50%)">7b. Sites with high macroalgae (\&gt;50%)</a><a id="7b.-Sites-with-high-macroalgae-(\\50%)-1"></a><a class="docs-heading-anchor-permalink" href="#7b.-Sites-with-high-macroalgae-(\\50%)" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Text search for high macroalgae observations
+high_algae = mem_search_text(store, &quot;macroalgae cover&quot;)
+println(&quot;Sites with high macroalgal cover:&quot;)
+for obs in high_algae
+    pct = match(r&quot;(\d+)%&quot;, obs.s)
+    if pct !== nothing &amp;&amp; parse(Int, pct.captures[1]) &gt; 50
+        # Trace back to the site
+        back = backward_cone(store, obs.nptr; depth=1)
+        for path in back.paths
+            for lnk in path
+                n = mem_get_node(store, lnk.dst)
+                if n !== nothing &amp;&amp; n.chap == &quot;study sites&quot;
+                    println(&quot;  $(n.s): $(obs.s)&quot;)
+                end
+            end
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Sites with high macroalgal cover:
+  St. Pierre: macroalgae cover: 58%
+  Praslin North: macroalgae cover: 65%
+  Anse Soleil: macroalgae cover: 52%
+  Mahé East: macroalgae cover: 70%</code></pre><h3 id="7c.-Orbit-analysis-of-a-key-variable"><a class="docs-heading-anchor" href="#7c.-Orbit-analysis-of-a-key-variable">7c. Orbit analysis of a key variable</a><a id="7c.-Orbit-analysis-of-a-key-variable-1"></a><a class="docs-heading-anchor-permalink" href="#7c.-Orbit-analysis-of-a-key-variable" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Orbit of Herbivorous Fish Biomass — what is it connected to?
+orbit = get_node_orbit(store, herbivores.nptr; limit=50)
+println(&quot;Orbit of &#39;$(herbivores.s)&#39;:&quot;)
+for (i, ring) in enumerate(orbit)
+    isempty(ring) &amp;&amp; continue
+    st_name = [&quot;−EXPRESS&quot;,&quot;−CONTAINS&quot;,&quot;−LEADSTO&quot;,&quot;NEAR&quot;,&quot;+LEADSTO&quot;,&quot;+CONTAINS&quot;,&quot;+EXPRESS&quot;][i]
+    println(&quot;  $st_name:&quot;)
+    for o in ring[1:min(5, length(ring))]
+        n = mem_get_node(store, o.dst)
+        n !== nothing &amp;&amp; println(&quot;    $(n.s)&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Orbit of &#39;Herbivorous Fish Biomass&#39;:
+  +LEADSTO:
+    Hard Coral Cover
+    Macroalgal Cover
+  +EXPRESS:
+    Measured: % benthic cover, continuous
+    Measured: kg/ha, continuous</code></pre><h2 id="8.-Comparing-DAG-Models"><a class="docs-heading-anchor" href="#8.-Comparing-DAG-Models">8. Comparing DAG Models</a><a id="8.-Comparing-DAG-Models-1"></a><a class="docs-heading-anchor-permalink" href="#8.-Comparing-DAG-Models" title="Permalink"></a></h2><p>We now have four DAG models stored in the graph. Let us compare them using SST’s chapter and cone-based queries.</p><pre><code class="language-julia hljs">println(&quot;Causal Model Comparison&quot;)
+println(&quot;═&quot;^60)
+
+for dag_name in [&quot;DAG 1: Confounding&quot;, &quot;DAG 2: Mediation &amp; Overcontrol&quot;,
+                  &quot;DAG 3: Collider Bias&quot;, &quot;DAG 4: Frontdoor Criterion&quot;]
+    results = mem_search_text(store, dag_name)
+    isempty(results) &amp;&amp; continue
+    dag_node = results[1]
+
+    # Get description
+    cone = forward_cone(store, dag_node.nptr; depth=1)
+    desc = &quot;&quot;
+    adj_sets = String[]
+    biases = String[]
+
+    for path in cone.paths
+        for lnk in path
+            n = mem_get_node(store, lnk.dst)
+            n === nothing &amp;&amp; continue
+            if n.chap == &quot;model descriptions&quot;
+                desc = first(split(n.s, &#39;\n&#39;))
+            elseif n.chap == &quot;adjustment sets&quot;
+                push!(adj_sets, n.s)
+            elseif n.chap == &quot;bias types&quot;
+                push!(biases, n.s)
+            end
+        end
+    end
+
+    println(&quot;\n$(dag_node.s)&quot;)
+    println(&quot;─&quot;^60)
+    !isempty(desc) &amp;&amp; println(&quot;  Q: $(desc[1:min(80, length(desc))])…&quot;)
+    for a in adj_sets
+        marker = startswith(a, &quot;WRONG&quot;) || startswith(a, &quot;Frontdoor&quot;) ? &quot;  ⚡&quot; : &quot;  ✓&quot;
+        println(&quot;$marker $a&quot;)
+    end
+    for b in biases
+        println(&quot;  ⚠  $b&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Causal Model Comparison
+════════════════════════════════════════════════════════════
+
+DAG 1: Confounding
+────────────────────────────────────────────────────────────
+  Q: Research question: What is the causal effect of herbivore biomass on coral cover…
+  ✓ Adjustment set: {Temperature}
+  ⚠  Confounding bias via Temperature
+
+DAG 2: Mediation &amp; Overcontrol
+────────────────────────────────────────────────────────────
+  Q: Research question: Same as DAG 1, but herbivory acts through macroalgae reductio…
+  ✓ Correct adjustment set: {Temperature} — blocks confounding, preserves mediation
+  ⚡ WRONG adjustment: {Temperature, Macroalgae} — overcontrol bias, blocks the causal pathway H → M → C
+  ⚠  Overcontrol bias via conditioning on mediator
+
+DAG 3: Collider Bias
+────────────────────────────────────────────────────────────
+  Q: Research question: What is the causal effect of nutrient enrichment on coral cov…
+  ✓ Correct adjustment set: {} (empty) — no confounders to block
+  ⚡ WRONG adjustment: {Structural Complexity} — collider bias, opens Nutrients → SC ← Wave → Coral spurious path
+  ⚠  Collider bias via conditioning on Structural Complexity
+
+DAG 4: Frontdoor Criterion
+────────────────────────────────────────────────────────────
+  Q: Research question: Estimate the causal effect of herbivory on coral when fishing…
+  ⚡ Frontdoor identification via Macroalgae: P(C|do(H)) = Σ_M P(M|H) Σ_H&#39; P(C|M,H&#39;) P(H&#39;)</code></pre><h2 id="9.-Automated-Backdoor-Path-Detection"><a class="docs-heading-anchor" href="#9.-Automated-Backdoor-Path-Detection">9. Automated Backdoor Path Detection</a><a id="9.-Automated-Backdoor-Path-Detection-1"></a><a class="docs-heading-anchor-permalink" href="#9.-Automated-Backdoor-Path-Detection" title="Permalink"></a></h2><p>We can write a general-purpose function that, given an exposure and outcome in our graph, identifies potential confounders by finding nodes with causal paths to <em>both</em> the exposure and the outcome.</p><pre><code class="language-julia hljs">&quot;&quot;&quot;Find potential confounders: nodes with forward paths to both X and Y.&quot;&quot;&quot;
+function find_confounders(store, exposure_nptr, outcome_nptr; depth=3)
+    # Backward cone from exposure — what causes the exposure?
+    back_x = backward_cone(store, exposure_nptr; depth=depth)
+    causes_x = Set{NodePtr}()
+    for path in back_x.paths
+        for lnk in path
+            push!(causes_x, lnk.dst)
+        end
+    end
+
+    # Backward cone from outcome — what causes the outcome?
+    back_y = backward_cone(store, outcome_nptr; depth=depth)
+    causes_y = Set{NodePtr}()
+    for path in back_y.paths
+        for lnk in path
+            push!(causes_y, lnk.dst)
+        end
+    end
+
+    # Confounders = nodes that cause both X and Y (but are not X or Y)
+    confounders = intersect(causes_x, causes_y)
+    delete!(confounders, exposure_nptr)
+    delete!(confounders, outcome_nptr)
+
+    return confounders
+end
+
+# Apply to DAG 1: Herbivores → Coral Cover
+conf = find_confounders(store, herbivores.nptr, corals.nptr; depth=3)
+println(&quot;Potential confounders for Herbivores → Coral Cover:&quot;)
+for c in conf
+    n = mem_get_node(store, c)
+    n !== nothing &amp;&amp; println(&quot;  • $(n.s) [$(n.chap)]&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Potential confounders for Herbivores → Coral Cover:
+  • DAG 2: Mediation &amp; Overcontrol [causal models]
+  • Biotic Components [ecosystem]
+  • Abiotic Drivers [ecosystem]
+  • Coral Reef Ecosystem [ecosystem]
+  • DAG 4: Frontdoor Criterion [causal models]
+  • Anthropogenic Pressures [ecosystem]
+  • DAG 1: Confounding [causal models]
+  • Sea Surface Temperature (SST) [abiotic]
+  • Fishing Pressure [human pressures]</code></pre><pre><code class="language-julia hljs"># Apply to DAG 3: Nutrients → Coral Cover
+conf3 = find_confounders(store, nutrients.nptr, corals.nptr; depth=3)
+println(&quot;Potential confounders for Nutrients → Coral Cover:&quot;)
+for c in conf3
+    n = mem_get_node(store, c)
+    n !== nothing &amp;&amp; println(&quot;  • $(n.s) [$(n.chap)]&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Potential confounders for Nutrients → Coral Cover:
+  • DAG 3: Collider Bias [causal models]
+  • Abiotic Drivers [ecosystem]
+  • Coral Reef Ecosystem [ecosystem]
+  • DAG 2: Mediation &amp; Overcontrol [causal models]</code></pre><h2 id="10.-Detecting-Colliders"><a class="docs-heading-anchor" href="#10.-Detecting-Colliders">10. Detecting Colliders</a><a id="10.-Detecting-Colliders-1"></a><a class="docs-heading-anchor-permalink" href="#10.-Detecting-Colliders" title="Permalink"></a></h2><p>A collider is a node where two (or more) arrows converge. We can detect colliders by looking for nodes with multiple parents from different causal pathways.</p><pre><code class="language-julia hljs">&quot;&quot;&quot;Find colliders: nodes with ≥2 LEADSTO parents from distinct paths.&quot;&quot;&quot;
+function find_colliders(store; min_parents=2)
+    colliders = Tuple{Node, Vector{Node}}[]
+
+    if store isa MemoryStore
+        for (nptr, node) in store.nodes
+            # Count distinct LEADSTO parents (backward LEADSTO = index 3)
+            bwd_leadsto_idx = SemanticSpacetime.sttype_to_index(-1)  # -LEADSTO
+            parents = Node[]
+            if bwd_leadsto_idx &gt;= 1 &amp;&amp; bwd_leadsto_idx &lt;= length(node.incidence)
+                for lnk in node.incidence[bwd_leadsto_idx]
+                    parent = mem_get_node(store, lnk.dst)
+                    parent !== nothing &amp;&amp; push!(parents, parent)
+                end
+            end
+            if length(parents) &gt;= min_parents
+                push!(colliders, (node, parents))
+            end
+        end
+    end
+
+    return colliders
+end
+
+colliders = find_colliders(store)
+println(&quot;Detected colliders (nodes with ≥2 causal parents):&quot;)
+for (node, parents) in colliders
+    parent_names = join([p.s for p in parents], &quot;, &quot;)
+    println(&quot;  ⚠  $(node.s) ← {$parent_names}&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Detected colliders (nodes with ≥2 causal parents):
+  ⚠  Macroalgal Cover ← {Herbivorous Fish Biomass, Dissolved Inorganic Nutrients}
+  ⚠  Herbivorous Fish Biomass ← {Sea Surface Temperature (SST), Fishing Pressure}
+  ⚠  Reef Structural Complexity ← {Dissolved Inorganic Nutrients, Wave Exposure}
+  ⚠  Algal-dominated State ← {Anse Soleil, Praslin North, St. Pierre, Mahé East}
+  ⚠  Coral-dominated State ← {Anse Royale, Baie Ternay, Cousin Island, Aldabra Atoll, Cosmoledo Atoll, Farquhar Atoll, Curieuse, Mahé West}
+  ⚠  Hard Coral Cover ← {Sea Surface Temperature (SST), Herbivorous Fish Biomass, Macroalgal Cover, Dissolved Inorganic Nutrients, Wave Exposure, Fishing Pressure}</code></pre><h2 id="11.-Summary-—-SCM-Concepts-Mapped-to-SST"><a class="docs-heading-anchor" href="#11.-Summary-—-SCM-Concepts-Mapped-to-SST">11. Summary — SCM Concepts Mapped to SST</a><a id="11.-Summary-—-SCM-Concepts-Mapped-to-SST-1"></a><a class="docs-heading-anchor-permalink" href="#11.-Summary-—-SCM-Concepts-Mapped-to-SST" title="Permalink"></a></h2><pre><code class="language-julia hljs">println(&quot;Summary: SCM → SST Mapping&quot;)
+println(&quot;═&quot;^60)
+mappings = [
+    (&quot;Variable (node in DAG)&quot;,     &quot;Node in chapter&quot;,           &quot;VERTEX&quot;),
+    (&quot;Causal arrow (X → Y)&quot;,      &quot;LEADSTO arrow&quot;,             &quot;then, leads to&quot;),
+    (&quot;Taxonomy / grouping&quot;,       &quot;CONTAINS arrow&quot;,            &quot;contain, has-pt&quot;),
+    (&quot;Property / measurement&quot;,    &quot;EXPRESS arrow&quot;,             &quot;note, data&quot;),
+    (&quot;Spatial proximity&quot;,         &quot;NEAR arrow&quot;,                &quot;ll, syn&quot;),
+    (&quot;Confounder detection&quot;,      &quot;Backward cone intersection&quot;,&quot;find_confounders()&quot;),
+    (&quot;Causal pathway&quot;,            &quot;Forward path finding&quot;,      &quot;find_paths()&quot;),
+    (&quot;Collider detection&quot;,        &quot;Multi-parent node query&quot;,   &quot;find_colliders()&quot;),
+    (&quot;Adjustment set&quot;,            &quot;Node annotated to DAG&quot;,     &quot;has-pt → adj set&quot;),
+    (&quot;Observed vs latent&quot;,        &quot;EXPRESS metadata&quot;,          &quot;note → metadata&quot;),
+]
+
+println(rpad(&quot;SCM Concept&quot;, 32), rpad(&quot;SST Equivalent&quot;, 28), &quot;Implementation&quot;)
+println(&quot;─&quot;^88)
+for (scm, sst, impl) in mappings
+    println(rpad(scm, 32), rpad(sst, 28), impl)
+end</code></pre><pre><code class="nohighlight hljs">Summary: SCM → SST Mapping
+════════════════════════════════════════════════════════════
+SCM Concept                     SST Equivalent              Implementation
+────────────────────────────────────────────────────────────────────────────────────────
+Variable (node in DAG)          Node in chapter             VERTEX
+Causal arrow (X → Y)            LEADSTO arrow               then, leads to
+Taxonomy / grouping             CONTAINS arrow              contain, has-pt
+Property / measurement          EXPRESS arrow               note, data
+Spatial proximity               NEAR arrow                  ll, syn
+Confounder detection            Backward cone intersection  find_confounders()
+Causal pathway                  Forward path finding        find_paths()
+Collider detection              Multi-parent node query     find_colliders()
+Adjustment set                  Node annotated to DAG       has-pt → adj set
+Observed vs latent              EXPRESS metadata            note → metadata</code></pre><pre><code class="language-julia hljs">println(&quot;\nFinal graph statistics:&quot;)
+println(&quot;  Nodes:    $(node_count(store))&quot;)
+println(&quot;  Links:    $(link_count(store))&quot;)
+chapters = mem_get_chapters(store)
+println(&quot;  Chapters: $(length(chapters))&quot;)
+for ch in sort(chapters)
+    println(&quot;    • $ch&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Final graph statistics:
+  Nodes:    122
+  Links:    338
+  Chapters: 14
+    • abiotic
+    • adjustment sets
+    • bias types
+    • biotic
+    • causal models
+    • ecosystem
+    • human pressures
+    • model descriptions
+    • observations
+    • site classification
+    • site properties
+    • states
+    • study sites
+    • variable metadata</code></pre><h2 id="Discussion"><a class="docs-heading-anchor" href="#Discussion">Discussion</a><a id="Discussion-1"></a><a class="docs-heading-anchor-permalink" href="#Discussion" title="Permalink"></a></h2><p>This vignette demonstrated how SemanticSpacetime.jl can encode and reason about structural causal models from ecology:</p><ol><li><p><strong>DAG representation</strong> — SST’s LEADSTO arrows naturally encode  causal relationships. Unlike generic graph libraries, the four-fold  arrow type system (NEAR, LEADSTO, CONTAINS, EXPRESS) captures the  <em>semantic character</em> of each relationship.</p></li><li><p><strong>Backdoor path detection</strong> — by intersecting backward cones from  exposure and outcome, we automatically identify potential  confounders that the backdoor criterion requires us to adjust for.</p></li><li><p><strong>Collider identification</strong> — querying for nodes with multiple  causal parents flags variables that should <em>not</em> be conditioned on.</p></li><li><p><strong>Domain ontology alongside causal models</strong> — SST’s chapter system  naturally separates the ecological ontology (species, sites,  measurements) from the causal model structure (DAGs, adjustment  sets, bias types). Both coexist in the same knowledge graph.</p></li><li><p><strong>Observational data integration</strong> — site-level measurements connect  to the abstract causal model via CONTAINS and EXPRESS arrows,  grounding the DAG in real (simulated) data.</p></li></ol><p>The SCM framework (Arif &amp; MacNeil, 2023) and Semantic Spacetime share a fundamental insight: <strong>making assumptions explicit</strong> — whether about causal direction or about the spacetime character of relationships — leads to more rigorous and transparent inference.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../15-epidemiology/">« Epidemiology</a><a class="docs-footer-nextpage" href="../../api/types/">Types &amp; Constants »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 19 March 2026 06:47">Thursday 19 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

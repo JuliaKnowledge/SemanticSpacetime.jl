@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Building Graphs · SemanticSpacetime.jl</title><meta name="title" content="Building Graphs · SemanticSpacetime.jl"/><meta property="og:title" content="Building Graphs · SemanticSpacetime.jl"/><meta property="twitter:title" content="Building Graphs · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/03-building-graphs/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/03-building-graphs/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/03-building-graphs/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li class="is-active"><a class="tocitem" href>Building Graphs</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Chapters-as-Topic-Boundaries"><span>Chapters as Topic Boundaries</span></a></li><li><a class="tocitem" href="#Cross-Chapter-Edges"><span>Cross-Chapter Edges</span></a></li><li><a class="tocitem" href="#Using-Contexts"><span>Using Contexts</span></a></li><li><a class="tocitem" href="#Idempotent-Operations"><span>Idempotent Operations</span></a></li><li><a class="tocitem" href="#Inspecting-the-Graph"><span>Inspecting the Graph</span></a></li><li><a class="tocitem" href="#Building-with-Annotations"><span>Building with Annotations</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Building Graphs</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Building Graphs</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Building-Knowledge-Graphs"><a class="docs-heading-anchor" href="#Building-Knowledge-Graphs">Building Knowledge Graphs</a><a id="Building-Knowledge-Graphs-1"></a><a class="docs-heading-anchor-permalink" href="#Building-Knowledge-Graphs" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>A knowledge graph in Semantic Spacetime is more than a bag of triples — it is a structured, typed representation of a domain organized by <em>chapters</em> (topics) and <em>contexts</em> (tags). This vignette demonstrates how to build a realistic knowledge graph modelling an infectious disease system.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Register a comprehensive set of arrows
+# LEADSTO
+then_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;then&quot;, &quot;leads to&quot;, &quot;+&quot;)
+then_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;prev&quot;, &quot;preceded by&quot;, &quot;-&quot;)
+insert_inverse_arrow!(then_f, then_b)
+
+causes_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;causes&quot;, &quot;causes&quot;, &quot;+&quot;)
+causes_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;caused-by&quot;, &quot;caused by&quot;, &quot;-&quot;)
+insert_inverse_arrow!(causes_f, causes_b)
+
+affects_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;affects&quot;, &quot;affects&quot;, &quot;+&quot;)
+affects_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;affected-by&quot;, &quot;is affected by&quot;, &quot;-&quot;)
+insert_inverse_arrow!(affects_f, affects_b)
+
+# CONTAINS
+has_f = insert_arrow!(&quot;CONTAINS&quot;, &quot;has&quot;, &quot;contains&quot;, &quot;+&quot;)
+has_b = insert_arrow!(&quot;CONTAINS&quot;, &quot;in&quot;, &quot;is in&quot;, &quot;-&quot;)
+insert_inverse_arrow!(has_f, has_b)
+
+part_f = insert_arrow!(&quot;CONTAINS&quot;, &quot;has-part&quot;, &quot;has part&quot;, &quot;+&quot;)
+part_b = insert_arrow!(&quot;CONTAINS&quot;, &quot;part-of&quot;, &quot;is part of&quot;, &quot;-&quot;)
+insert_inverse_arrow!(part_f, part_b)
+
+# EXPRESS
+note_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;note&quot;, &quot;has note&quot;, &quot;+&quot;)
+eg_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;e.g.&quot;, &quot;has example&quot;, &quot;+&quot;)
+name_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;name&quot;, &quot;has name&quot;, &quot;+&quot;)
+
+# NEAR
+like_arr = insert_arrow!(&quot;NEAR&quot;, &quot;like&quot;, &quot;is similar to&quot;, &quot;+&quot;)
+
+store = MemoryStore()</code></pre><pre><code class="nohighlight hljs">MemoryStore
+  Nodes:    0
+  Links:    0
+  Chapters:</code></pre><h2 id="Chapters-as-Topic-Boundaries"><a class="docs-heading-anchor" href="#Chapters-as-Topic-Boundaries">Chapters as Topic Boundaries</a><a id="Chapters-as-Topic-Boundaries-1"></a><a class="docs-heading-anchor-permalink" href="#Chapters-as-Topic-Boundaries" title="Permalink"></a></h2><p>Chapters organize the graph into thematic sections. A node belongs to exactly one chapter, but edges can cross chapter boundaries. Think of chapters as sections in a notebook.</p><pre><code class="language-julia hljs"># Chapter: pathogen — describe the virus
+virus = mem_vertex!(store, &quot;SARS-CoV-2&quot;, &quot;pathogen&quot;)
+spike = mem_vertex!(store, &quot;spike protein&quot;, &quot;pathogen&quot;)
+rna = mem_vertex!(store, &quot;RNA genome&quot;, &quot;pathogen&quot;)
+mem_edge!(store, virus, &quot;has-part&quot;, spike)
+mem_edge!(store, virus, &quot;has-part&quot;, rna)
+mem_edge!(store, virus, &quot;name&quot;, mem_vertex!(store, &quot;severe acute respiratory syndrome coronavirus 2&quot;, &quot;pathogen&quot;))
+
+# Chapter: transmission — how the disease spreads
+droplets = mem_vertex!(store, &quot;respiratory droplets&quot;, &quot;transmission&quot;)
+aerosol = mem_vertex!(store, &quot;aerosol transmission&quot;, &quot;transmission&quot;)
+contact = mem_vertex!(store, &quot;close contact&quot;, &quot;transmission&quot;)
+mem_edge!(store, contact, &quot;causes&quot;, mem_vertex!(store, &quot;exposure&quot;, &quot;transmission&quot;), [&quot;airborne&quot;])
+mem_edge!(store, droplets, &quot;like&quot;, aerosol)
+
+# Chapter: disease — clinical progression
+infection = mem_vertex!(store, &quot;infection&quot;, &quot;disease&quot;)
+incubation = mem_vertex!(store, &quot;incubation period&quot;, &quot;disease&quot;)
+symptoms = mem_vertex!(store, &quot;symptom onset&quot;, &quot;disease&quot;)
+fever = mem_vertex!(store, &quot;fever&quot;, &quot;disease&quot;)
+cough = mem_vertex!(store, &quot;cough&quot;, &quot;disease&quot;)
+recovery = mem_vertex!(store, &quot;recovery&quot;, &quot;disease&quot;)
+severe = mem_vertex!(store, &quot;severe disease&quot;, &quot;disease&quot;)
+
+# Temporal chain of disease progression
+mem_edge!(store, infection, &quot;then&quot;, incubation)
+mem_edge!(store, incubation, &quot;then&quot;, symptoms)
+mem_edge!(store, symptoms, &quot;then&quot;, recovery)
+mem_edge!(store, symptoms, &quot;then&quot;, severe)
+
+# Symptoms as parts of the disease
+mem_edge!(store, symptoms, &quot;has&quot;, fever)
+mem_edge!(store, symptoms, &quot;has&quot;, cough)
+
+# Chapter: intervention — public health responses
+vaccine = mem_vertex!(store, &quot;mRNA vaccine&quot;, &quot;intervention&quot;)
+mask = mem_vertex!(store, &quot;face mask&quot;, &quot;intervention&quot;)
+distancing = mem_vertex!(store, &quot;social distancing&quot;, &quot;intervention&quot;)
+
+println(&quot;Graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)
+println(&quot;Chapters: &quot;, join(mem_get_chapters(store), &quot;, &quot;))</code></pre><pre><code class="nohighlight hljs">Graph: 18 nodes, 20 links
+Chapters: disease, intervention, pathogen, transmission</code></pre><h2 id="Cross-Chapter-Edges"><a class="docs-heading-anchor" href="#Cross-Chapter-Edges">Cross-Chapter Edges</a><a id="Cross-Chapter-Edges-1"></a><a class="docs-heading-anchor-permalink" href="#Cross-Chapter-Edges" title="Permalink"></a></h2><p>Edges can link nodes across chapters, capturing how different aspects of a domain interact:</p><pre><code class="language-julia hljs"># The virus causes infection (pathogen → disease)
+mem_edge!(store, virus, &quot;causes&quot;, infection, [&quot;epidemiology&quot;])
+
+# Spike protein enables transmission (pathogen → transmission)
+mem_edge!(store, spike, &quot;causes&quot;, mem_vertex!(store, &quot;cell entry&quot;, &quot;transmission&quot;), [&quot;mechanism&quot;])
+
+# Vaccines affect the virus (intervention → pathogen)
+mem_edge!(store, vaccine, &quot;affects&quot;, spike, [&quot;immunology&quot;])
+
+# Masks reduce transmission (intervention → transmission)
+mem_edge!(store, mask, &quot;affects&quot;, droplets, [&quot;prevention&quot;])
+mem_edge!(store, distancing, &quot;affects&quot;, contact, [&quot;prevention&quot;])
+
+println(&quot;Cross-chapter links created&quot;)
+println(&quot;Updated: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Cross-chapter links created
+Updated: 19 nodes, 30 links</code></pre><h2 id="Using-Contexts"><a class="docs-heading-anchor" href="#Using-Contexts">Using Contexts</a><a id="Using-Contexts-1"></a><a class="docs-heading-anchor-permalink" href="#Using-Contexts" title="Permalink"></a></h2><p>Contexts are metadata tags attached to edges that describe <em>the perspective</em> or <em>domain</em> of a relationship. They enable filtered views of the same graph.</p><pre><code class="language-julia hljs"># Add nodes with contextual edges
+r0 = mem_vertex!(store, &quot;basic reproduction number&quot;, &quot;epidemiology&quot;)
+mem_edge!(store, r0, &quot;note&quot;,
+          mem_vertex!(store, &quot;R0 ≈ 2-3 for original strain&quot;, &quot;epidemiology&quot;),
+          [&quot;statistics&quot;, &quot;modelling&quot;])
+
+mem_edge!(store, r0, &quot;note&quot;,
+          mem_vertex!(store, &quot;R0 influenced by contact patterns&quot;, &quot;epidemiology&quot;),
+          [&quot;behaviour&quot;, &quot;modelling&quot;])
+
+mem_edge!(store, r0, &quot;affects&quot;, severe,
+          [&quot;public-health&quot;, &quot;modelling&quot;])
+
+println(&quot;Contextual edges added&quot;)</code></pre><pre><code class="nohighlight hljs">Contextual edges added</code></pre><h2 id="Idempotent-Operations"><a class="docs-heading-anchor" href="#Idempotent-Operations">Idempotent Operations</a><a id="Idempotent-Operations-1"></a><a class="docs-heading-anchor-permalink" href="#Idempotent-Operations" title="Permalink"></a></h2><p>A key feature of SST is that <code>mem_vertex!</code> is <em>idempotent</em> — adding the same node twice returns the existing one. This simplifies graph construction since you don’t need to track whether a node already exists.</p><pre><code class="language-julia hljs">v1 = mem_vertex!(store, &quot;SARS-CoV-2&quot;, &quot;pathogen&quot;)
+v2 = mem_vertex!(store, &quot;SARS-CoV-2&quot;, &quot;pathogen&quot;)
+println(&quot;Same node? $(v1.nptr == v2.nptr)&quot;)
+println(&quot;Node count unchanged: $(node_count(store))&quot;)</code></pre><pre><code class="nohighlight hljs">Same node? true
+Node count unchanged: 22</code></pre><h2 id="Inspecting-the-Graph"><a class="docs-heading-anchor" href="#Inspecting-the-Graph">Inspecting the Graph</a><a id="Inspecting-the-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Inspecting-the-Graph" title="Permalink"></a></h2><p>Let’s examine the structure we’ve built:</p><pre><code class="language-julia hljs"># Show node distribution across chapters
+for chap in sort(mem_get_chapters(store))
+    count = 0
+    for (_, node) in store.nodes
+        if node.chap == chap
+            count += 1
+        end
+    end
+    println(&quot;  $chap: $count nodes&quot;)
+end</code></pre><pre><code class="nohighlight hljs">  disease: 7 nodes
+  epidemiology: 3 nodes
+  intervention: 3 nodes
+  pathogen: 4 nodes
+  transmission: 5 nodes</code></pre><pre><code class="language-julia hljs"># Show the incidence structure of the virus node
+channel_names = [&quot;-EXPRESS&quot;, &quot;-CONTAINS&quot;, &quot;-LEADSTO&quot;, &quot;NEAR&quot;,
+                 &quot;+LEADSTO&quot;, &quot;+CONTAINS&quot;, &quot;+EXPRESS&quot;]
+
+println(&quot;Links from &#39;SARS-CoV-2&#39;:&quot;)
+for (i, links) in enumerate(virus.incidence)
+    for link in links
+        dst = mem_get_node(store, link.dst)
+        arr = get_arrow_by_ptr(link.arr)
+        if dst !== nothing
+            println(&quot;  [$(channel_names[i])] —($(arr.short))→ &#39;$(dst.s)&#39;&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Links from &#39;SARS-CoV-2&#39;:
+  [+LEADSTO] —(causes)→ &#39;infection&#39;
+  [+CONTAINS] —(has-part)→ &#39;spike protein&#39;
+  [+CONTAINS] —(has-part)→ &#39;RNA genome&#39;
+  [+EXPRESS] —(name)→ &#39;severe acute respiratory syndrome coronavirus 2&#39;</code></pre><h2 id="Building-with-Annotations"><a class="docs-heading-anchor" href="#Building-with-Annotations">Building with Annotations</a><a id="Building-with-Annotations-1"></a><a class="docs-heading-anchor-permalink" href="#Building-with-Annotations" title="Permalink"></a></h2><p>EXPRESS edges are particularly useful for adding metadata, examples, and notes to any node:</p><pre><code class="language-julia hljs"># Annotate the vaccine node
+mem_edge!(store, vaccine, &quot;note&quot;,
+          mem_vertex!(store, &quot;Pfizer-BioNTech BNT162b2&quot;, &quot;intervention&quot;))
+mem_edge!(store, vaccine, &quot;note&quot;,
+          mem_vertex!(store, &quot;Moderna mRNA-1273&quot;, &quot;intervention&quot;))
+mem_edge!(store, vaccine, &quot;e.g.&quot;,
+          mem_vertex!(store, &quot;two-dose regimen with 21-day interval&quot;, &quot;intervention&quot;))
+
+println(&quot;Final graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Final graph: 25 nodes, 37 links</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>Key patterns for building SST knowledge graphs:</p><ol><li><strong>Organize by chapter</strong> — group related nodes into thematic sections</li><li><strong>Use typed arrows</strong> — choose the right STType for each relationship</li><li><strong>Add context</strong> — tag edges with topic keywords for filtered views</li><li><strong>Cross-reference</strong> — connect nodes across chapters to capture  cross-domain relationships</li><li><strong>Annotate freely</strong> — use EXPRESS edges for notes, examples, and  metadata</li></ol></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../02-sst-types/">« Sst Types</a><a class="docs-footer-nextpage" href="../04-n4l-language/">N4l Language »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 19 March 2026 06:47">Thursday 19 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

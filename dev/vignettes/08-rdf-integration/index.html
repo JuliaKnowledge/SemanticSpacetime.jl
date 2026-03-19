@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Rdf Integration · SemanticSpacetime.jl</title><meta name="title" content="Rdf Integration · SemanticSpacetime.jl"/><meta property="og:title" content="Rdf Integration · SemanticSpacetime.jl"/><meta property="twitter:title" content="Rdf Integration · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/08-rdf-integration/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/08-rdf-integration/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/08-rdf-integration/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li class="is-active"><a class="tocitem" href>Rdf Integration</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Building-an-SST-Graph"><span>Building an SST Graph</span></a></li><li><a class="tocitem" href="#SST-Namespaces"><span>SST Namespaces</span></a></li><li><a class="tocitem" href="#Converting-SST-to-RDF-Triples"><span>Converting SST to RDF Triples</span></a></li><li><a class="tocitem" href="#Exporting-as-Turtle"><span>Exporting as Turtle</span></a></li><li><a class="tocitem" href="#Importing-Turtle-into-SST"><span>Importing Turtle into SST</span></a></li><li><a class="tocitem" href="#Round-Trip-Conversion"><span>Round-Trip Conversion</span></a></li><li><a class="tocitem" href="#Parsing-Raw-Turtle"><span>Parsing Raw Turtle</span></a></li><li><a class="tocitem" href="#Converting-Triples-to-SST"><span>Converting Triples to SST</span></a></li><li><a class="tocitem" href="#SST-vs-RDF:-What’s-Different?"><span>SST vs RDF: What’s Different?</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Rdf Integration</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Rdf Integration</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="RDF-Integration"><a class="docs-heading-anchor" href="#RDF-Integration">RDF Integration</a><a id="RDF-Integration-1"></a><a class="docs-heading-anchor-permalink" href="#RDF-Integration" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>While Semantic Spacetime has a richer type system than RDF (Resource Description Framework), interoperability with the Semantic Web is valuable. SemanticSpacetime.jl can convert SST graphs to and from RDF triples, and serialise/deserialise in Turtle format. This vignette shows how to bridge the two worlds.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Register arrows
+then_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;then&quot;, &quot;leads to&quot;, &quot;+&quot;)
+then_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;prev&quot;, &quot;preceded by&quot;, &quot;-&quot;)
+insert_inverse_arrow!(then_f, then_b)
+
+has_f = insert_arrow!(&quot;CONTAINS&quot;, &quot;has&quot;, &quot;contains&quot;, &quot;+&quot;)
+has_b = insert_arrow!(&quot;CONTAINS&quot;, &quot;in&quot;, &quot;is in&quot;, &quot;-&quot;)
+insert_inverse_arrow!(has_f, has_b)
+
+note_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;note&quot;, &quot;has note&quot;, &quot;+&quot;)
+eg_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;e.g.&quot;, &quot;has example&quot;, &quot;+&quot;)
+like_arr = insert_arrow!(&quot;NEAR&quot;, &quot;like&quot;, &quot;is similar to&quot;, &quot;+&quot;)</code></pre><pre><code class="nohighlight hljs">7</code></pre><h2 id="Building-an-SST-Graph"><a class="docs-heading-anchor" href="#Building-an-SST-Graph">Building an SST Graph</a><a id="Building-an-SST-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Building-an-SST-Graph" title="Permalink"></a></h2><p>Let’s create a small astronomy knowledge graph:</p><pre><code class="language-julia hljs">store = MemoryStore()
+
+# Solar system structure
+solar = mem_vertex!(store, &quot;Solar System&quot;, &quot;astronomy&quot;)
+sun = mem_vertex!(store, &quot;Sun&quot;, &quot;astronomy&quot;)
+earth = mem_vertex!(store, &quot;Earth&quot;, &quot;astronomy&quot;)
+mars = mem_vertex!(store, &quot;Mars&quot;, &quot;astronomy&quot;)
+jupiter = mem_vertex!(store, &quot;Jupiter&quot;, &quot;astronomy&quot;)
+
+mem_edge!(store, solar, &quot;has&quot;, sun)
+mem_edge!(store, solar, &quot;has&quot;, earth)
+mem_edge!(store, solar, &quot;has&quot;, mars)
+mem_edge!(store, solar, &quot;has&quot;, jupiter)
+
+# Properties
+mem_edge!(store, earth, &quot;note&quot;, mem_vertex!(store, &quot;third planet from the Sun&quot;, &quot;astronomy&quot;))
+mem_edge!(store, mars, &quot;note&quot;, mem_vertex!(store, &quot;the red planet&quot;, &quot;astronomy&quot;))
+mem_edge!(store, jupiter, &quot;note&quot;, mem_vertex!(store, &quot;largest planet&quot;, &quot;astronomy&quot;))
+
+# Similarity
+mem_edge!(store, earth, &quot;like&quot;, mars, [&quot;rocky-planets&quot;])
+
+# Process
+mem_edge!(store, sun, &quot;then&quot;, mem_vertex!(store, &quot;solar wind&quot;, &quot;astronomy&quot;))
+
+println(&quot;SST graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">SST graph: 9 nodes, 14 links</code></pre><h2 id="SST-Namespaces"><a class="docs-heading-anchor" href="#SST-Namespaces">SST Namespaces</a><a id="SST-Namespaces-1"></a><a class="docs-heading-anchor-permalink" href="#SST-Namespaces" title="Permalink"></a></h2><p>RDF requires URIs for subjects, predicates, and objects. SST uses a namespace configuration to generate these:</p><pre><code class="language-julia hljs"># Default namespace
+ns = sst_namespace()
+println(&quot;Base URI: $(ns.base)&quot;)
+println(&quot;Vocab URI: $(ns.vocab)&quot;)</code></pre><pre><code class="nohighlight hljs">Base URI: http://sst.example.org/
+Vocab URI: http://sst.example.org/vocab#</code></pre><pre><code class="language-julia hljs"># Custom namespace for a project
+ns_astro = sst_namespace(&quot;http://astronomy.example.org/kg/&quot;)
+println(&quot;Custom base: $(ns_astro.base)&quot;)</code></pre><pre><code class="nohighlight hljs">Custom base: http://astronomy.example.org/kg/</code></pre><h2 id="Converting-SST-to-RDF-Triples"><a class="docs-heading-anchor" href="#Converting-SST-to-RDF-Triples">Converting SST to RDF Triples</a><a id="Converting-SST-to-RDF-Triples-1"></a><a class="docs-heading-anchor-permalink" href="#Converting-SST-to-RDF-Triples" title="Permalink"></a></h2><p>The <code>sst_to_rdf</code> function converts the entire SST graph into a list of RDF triples:</p><pre><code class="language-julia hljs">triples = sst_to_rdf(store; namespace=ns_astro)
+println(&quot;Generated $(length(triples)) RDF triples\n&quot;)
+
+for t in triples[1:min(10, length(triples))]
+    println(&quot;  $(t.subject)&quot;)
+    println(&quot;    $(t.predicate)&quot;)
+    println(&quot;    $(t.object)&quot;)
+    println()
+end</code></pre><pre><code class="nohighlight hljs">Generated 70 RDF triples
+
+  http://astronomy.example.org/kg/node/solar_wind
+    http://www.w3.org/1999/02/22-rdf-syntax-ns#type
+    http://astronomy.example.org/kg/vocab#Node
+
+  http://astronomy.example.org/kg/node/solar_wind
+    http://www.w3.org/2000/01/rdf-schema#label
+    solar wind
+
+  http://astronomy.example.org/kg/node/solar_wind
+    http://astronomy.example.org/kg/vocab#chapter
+    http://astronomy.example.org/kg/chapter/astronomy
+
+  http://astronomy.example.org/kg/node/Solar_System
+    http://www.w3.org/1999/02/22-rdf-syntax-ns#type
+    http://astronomy.example.org/kg/vocab#Node
+
+  http://astronomy.example.org/kg/node/Solar_System
+    http://www.w3.org/2000/01/rdf-schema#label
+    Solar System
+
+  http://astronomy.example.org/kg/node/Solar_System
+    http://astronomy.example.org/kg/vocab#chapter
+    http://astronomy.example.org/kg/chapter/astronomy
+
+  http://astronomy.example.org/kg/node/Mars
+    http://www.w3.org/1999/02/22-rdf-syntax-ns#type
+    http://astronomy.example.org/kg/vocab#Node
+
+  http://astronomy.example.org/kg/node/Mars
+    http://www.w3.org/2000/01/rdf-schema#label
+    Mars
+
+  http://astronomy.example.org/kg/node/Mars
+    http://astronomy.example.org/kg/vocab#chapter
+    http://astronomy.example.org/kg/chapter/astronomy
+
+  http://astronomy.example.org/kg/node/Sun
+    http://www.w3.org/1999/02/22-rdf-syntax-ns#type
+    http://astronomy.example.org/kg/vocab#Node</code></pre><h2 id="Exporting-as-Turtle"><a class="docs-heading-anchor" href="#Exporting-as-Turtle">Exporting as Turtle</a><a id="Exporting-as-Turtle-1"></a><a class="docs-heading-anchor-permalink" href="#Exporting-as-Turtle" title="Permalink"></a></h2><p>Turtle is a compact, human-readable RDF serialisation format. SST graphs can be exported directly:</p><pre><code class="language-julia hljs">turtle = export_turtle(store; namespace=ns_astro)
+println(turtle)</code></pre><pre><code class="nohighlight hljs">@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; .
+@prefix sst: &lt;http://astronomy.example.org/kg/&gt; .
+@prefix sst-vocab: &lt;http://astronomy.example.org/kg/vocab#&gt; .
+
+&lt;http://astronomy.example.org/kg/node/solar_wind&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/solar_wind&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;solar wind&quot; .
+&lt;http://astronomy.example.org/kg/node/solar_wind&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;Solar System&quot; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/Mars&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/Mars&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;Mars&quot; .
+&lt;http://astronomy.example.org/kg/node/Mars&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/Sun&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/Sun&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;Sun&quot; .
+&lt;http://astronomy.example.org/kg/node/Sun&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/Jupiter&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/Jupiter&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;Jupiter&quot; .
+&lt;http://astronomy.example.org/kg/node/Jupiter&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/the_red_planet&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/the_red_planet&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;the red planet&quot; .
+&lt;http://astronomy.example.org/kg/node/the_red_planet&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/largest_planet&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/largest_planet&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;largest planet&quot; .
+&lt;http://astronomy.example.org/kg/node/largest_planet&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;Earth&quot; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/third_planet_from_the_Sun&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#Node&gt; .
+&lt;http://astronomy.example.org/kg/node/third_planet_from_the_Sun&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;third planet from the Sun&quot; .
+&lt;http://astronomy.example.org/kg/node/third_planet_from_the_Sun&gt; &lt;http://astronomy.example.org/kg/vocab#chapter&gt; &lt;http://astronomy.example.org/kg/chapter/astronomy&gt; .
+&lt;http://astronomy.example.org/kg/node/solar_wind&gt; &lt;http://astronomy.example.org/kg/vocab#prev&gt; &lt;http://astronomy.example.org/kg/node/Sun&gt; .
+&lt;http://astronomy.example.org/kg/vocab#prev&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#prev&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;-LEADSTO&quot; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://astronomy.example.org/kg/node/Sun&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://astronomy.example.org/kg/node/Earth&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://astronomy.example.org/kg/node/Mars&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Solar_System&gt; &lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://astronomy.example.org/kg/node/Jupiter&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#has&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Mars&gt; &lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://astronomy.example.org/kg/node/Solar_System&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;-CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Mars&gt; &lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://astronomy.example.org/kg/node/the_red_planet&gt; .
+&lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+EXPRESS&quot; .
+&lt;http://astronomy.example.org/kg/node/Sun&gt; &lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://astronomy.example.org/kg/node/Solar_System&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;-CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Sun&gt; &lt;http://astronomy.example.org/kg/vocab#then&gt; &lt;http://astronomy.example.org/kg/node/solar_wind&gt; .
+&lt;http://astronomy.example.org/kg/vocab#then&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#then&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+LEADSTO&quot; .
+&lt;http://astronomy.example.org/kg/node/Jupiter&gt; &lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://astronomy.example.org/kg/node/Solar_System&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;-CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Jupiter&gt; &lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://astronomy.example.org/kg/node/largest_planet&gt; .
+&lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+EXPRESS&quot; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://astronomy.example.org/kg/node/Solar_System&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#in&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;-CONTAINS&quot; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://astronomy.example.org/kg/vocab#like&gt; &lt;http://astronomy.example.org/kg/node/Mars&gt; .
+&lt;http://astronomy.example.org/kg/vocab#like&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#like&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;NEAR&quot; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://astronomy.example.org/kg/vocab#context&gt; &lt;http://astronomy.example.org/kg/context/rocky-planets&gt; .
+&lt;http://astronomy.example.org/kg/node/Earth&gt; &lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://astronomy.example.org/kg/node/third_planet_from_the_Sun&gt; .
+&lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://astronomy.example.org/kg/vocab#STType&gt; .
+&lt;http://astronomy.example.org/kg/vocab#note&gt; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; &quot;+EXPRESS&quot; .</code></pre><h2 id="Importing-Turtle-into-SST"><a class="docs-heading-anchor" href="#Importing-Turtle-into-SST">Importing Turtle into SST</a><a id="Importing-Turtle-into-SST-1"></a><a class="docs-heading-anchor-permalink" href="#Importing-Turtle-into-SST" title="Permalink"></a></h2><p>You can also go the other direction — import RDF Turtle data into an SST graph. This is useful for integrating external Linked Data sources.</p><pre><code class="language-julia hljs"># Create Turtle data about constellations
+turtle_input = &quot;&quot;&quot;
+@prefix sst: &lt;http://astronomy.example.org/kg/&gt; .
+@prefix sstp: &lt;http://astronomy.example.org/kg/vocab/&gt; .
+
+sst:Orion sstp:contains sst:Betelgeuse .
+sst:Orion sstp:contains sst:Rigel .
+sst:Orion sstp:note &quot;winter constellation&quot; .
+sst:UrsaMajor sstp:contains sst:Polaris .
+&quot;&quot;&quot;
+
+import_store = MemoryStore()
+import_turtle!(import_store, turtle_input; namespace=ns_astro, chapter=&quot;constellations&quot;)
+
+println(&quot;Imported: $(node_count(import_store)) nodes, $(link_count(import_store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Imported: 6 nodes, 7 links</code></pre><pre><code class="language-julia hljs"># Check what was imported
+for name in [&quot;Orion&quot;, &quot;Betelgeuse&quot;, &quot;Rigel&quot;, &quot;UrsaMajor&quot;, &quot;Polaris&quot;]
+    nodes = mem_get_nodes_by_name(import_store, name)
+    if !isempty(nodes)
+        println(&quot;Found: &#39;$(nodes[1].s)&#39; in chapter &#39;$(nodes[1].chap)&#39;&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Found: &#39;Orion&#39; in chapter &#39;constellations&#39;
+Found: &#39;Betelgeuse&#39; in chapter &#39;constellations&#39;
+Found: &#39;Rigel&#39; in chapter &#39;constellations&#39;
+Found: &#39;UrsaMajor&#39; in chapter &#39;constellations&#39;
+Found: &#39;Polaris&#39; in chapter &#39;constellations&#39;</code></pre><h2 id="Round-Trip-Conversion"><a class="docs-heading-anchor" href="#Round-Trip-Conversion">Round-Trip Conversion</a><a id="Round-Trip-Conversion-1"></a><a class="docs-heading-anchor-permalink" href="#Round-Trip-Conversion" title="Permalink"></a></h2><p>A key test of any serialisation format is the round trip — can you export and re-import without losing information?</p><pre><code class="language-julia hljs"># Export the original store
+turtle_out = export_turtle(store; namespace=ns_astro)
+
+# Import into a fresh store
+round_trip_store = MemoryStore()
+import_turtle!(round_trip_store, turtle_out; namespace=ns_astro, chapter=&quot;astronomy&quot;)
+
+println(&quot;Original: $(node_count(store)) nodes, $(link_count(store)) links&quot;)
+println(&quot;Round-trip: $(node_count(round_trip_store)) nodes, $(link_count(round_trip_store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Original: 9 nodes, 14 links
+Round-trip: 9 nodes, 14 links</code></pre><h2 id="Parsing-Raw-Turtle"><a class="docs-heading-anchor" href="#Parsing-Raw-Turtle">Parsing Raw Turtle</a><a id="Parsing-Raw-Turtle-1"></a><a class="docs-heading-anchor-permalink" href="#Parsing-Raw-Turtle" title="Permalink"></a></h2><p>The <code>parse_turtle</code> function converts Turtle text into a vector of <code>RDFTriple</code> structs without loading them into a store:</p><pre><code class="language-julia hljs">raw_triples = parse_turtle(&quot;&quot;&quot;
+@prefix ex: &lt;http://example.org/&gt; .
+ex:Alice ex:knows ex:Bob .
+ex:Bob ex:knows ex:Carol .
+ex:Carol ex:knows ex:Alice .
+&quot;&quot;&quot;)
+
+println(&quot;Parsed $(length(raw_triples)) triples:&quot;)
+for t in raw_triples
+    println(&quot;  $(t.subject) —[$(t.predicate)]→ $(t.object)&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Parsed 3 triples:
+  http://example.org/Alice —[http://example.org/knows]→ http://example.org/Bob
+  http://example.org/Bob —[http://example.org/knows]→ http://example.org/Carol
+  http://example.org/Carol —[http://example.org/knows]→ http://example.org/Alice</code></pre><h2 id="Converting-Triples-to-SST"><a class="docs-heading-anchor" href="#Converting-Triples-to-SST">Converting Triples to SST</a><a id="Converting-Triples-to-SST-1"></a><a class="docs-heading-anchor-permalink" href="#Converting-Triples-to-SST" title="Permalink"></a></h2><p>You can also convert a vector of <code>RDFTriple</code> structs directly into an SST store using <code>rdf_to_sst!</code>:</p><pre><code class="language-julia hljs">triple_store = MemoryStore()
+rdf_to_sst!(triple_store, raw_triples; namespace=sst_namespace(&quot;http://example.org/&quot;), chapter=&quot;social&quot;)
+
+println(&quot;Converted: $(node_count(triple_store)) nodes, $(link_count(triple_store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Converted: 3 nodes, 3 links</code></pre><h2 id="SST-vs-RDF:-What’s-Different?"><a class="docs-heading-anchor" href="#SST-vs-RDF:-What’s-Different?">SST vs RDF: What’s Different?</a><a id="SST-vs-RDF:-What’s-Different?-1"></a><a class="docs-heading-anchor-permalink" href="#SST-vs-RDF:-What’s-Different?" title="Permalink"></a></h2><p>SST’s type system is strictly richer than RDF’s:</p><table><tr><th style="text-align: right">Feature</th><th style="text-align: right">RDF</th><th style="text-align: right">SST</th></tr><tr><td style="text-align: right">Edge types</td><td style="text-align: right">Arbitrary predicates</td><td style="text-align: right">4 STTypes × 2 directions = 7 channels</td></tr><tr><td style="text-align: right">Node classification</td><td style="text-align: right">Via <code>rdf:type</code> triples</td><td style="text-align: right">Built-in ETC (Event/Thing/Concept)</td></tr><tr><td style="text-align: right">Causality</td><td style="text-align: right">No built-in notion</td><td style="text-align: right">LEADSTO type with cone search</td></tr><tr><td style="text-align: right">Containment</td><td style="text-align: right">No built-in notion</td><td style="text-align: right">CONTAINS type with hierarchy</td></tr><tr><td style="text-align: right">Context</td><td style="text-align: right">Named graphs</td><td style="text-align: right">Per-edge context tags</td></tr><tr><td style="text-align: right">Chapters</td><td style="text-align: right">No equivalent</td><td style="text-align: right">Built-in topic grouping</td></tr></table><p>When converting SST → RDF, some semantic richness is flattened into predicates. When converting RDF → SST, predicates are mapped to the closest STType. The <code>PredicateMapping</code> system allows you to customise this mapping for domain-specific vocabularies.</p><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>SemanticSpacetime.jl provides full bidirectional RDF integration:</p><table><tr><th style="text-align: right">Function</th><th style="text-align: right">Purpose</th></tr><tr><td style="text-align: right"><code>sst_to_rdf</code></td><td style="text-align: right">Convert SST graph → RDF triples</td></tr><tr><td style="text-align: right"><code>rdf_to_sst!</code></td><td style="text-align: right">Convert RDF triples → SST graph</td></tr><tr><td style="text-align: right"><code>export_turtle</code></td><td style="text-align: right">Serialise SST graph as Turtle</td></tr><tr><td style="text-align: right"><code>import_turtle!</code></td><td style="text-align: right">Parse Turtle text into SST graph</td></tr><tr><td style="text-align: right"><code>parse_turtle</code></td><td style="text-align: right">Parse Turtle into RDFTriple structs</td></tr><tr><td style="text-align: right"><code>sst_namespace</code></td><td style="text-align: right">Configure URI namespace</td></tr></table><p>This enables SST to participate in the broader Linked Data ecosystem while retaining its richer spacetime type semantics internally.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../07-paths-and-cones/">« Paths And Cones</a><a class="docs-footer-nextpage" href="../09-api-examples/">Api Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 19 March 2026 06:47">Thursday 19 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
