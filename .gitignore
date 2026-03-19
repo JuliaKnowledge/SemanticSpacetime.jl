@@ -3,4 +3,5 @@ Manifest.toml
 *.jl.cov
 *.jl.mem
 docs/build/
+docs/src/vignettes/
 benchmarks/results/
