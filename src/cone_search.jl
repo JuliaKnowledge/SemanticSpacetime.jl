@@ -191,6 +191,26 @@ end
 Filter a set of node pointers to those whose links match the given
 arrow types and ST types. Mirrors the Go `SelectStoriesByArrow`.
 """
+function _matches_arrow_filter(node::Node,
+                               arrowptrs::Vector{ArrowPtr},
+                               sttypes::Vector{Int})
+    arrowset = Set(arrowptrs)
+    sttypeset = Set(sttypes)
+
+    for (stidx, bucket) in enumerate(node.incidence)
+        if !isempty(sttypeset) && !(stidx in sttypeset)
+            continue
+        end
+        for lnk in bucket
+            if isempty(arrowset) || (lnk.arr in arrowset)
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 function select_stories_by_arrow(sst::SSTConnection,
                                  nodeptrs::Vector{NodePtr},
                                  arrowptrs::Vector{ArrowPtr},
@@ -200,6 +220,7 @@ function select_stories_by_arrow(sst::SSTConnection,
     for nptr in nodeptrs
         node = get_db_node_by_nodeptr(sst, nptr)
         isempty(node.s) && continue
+        _matches_arrow_filter(node, arrowptrs, sttypes) || continue
         push!(matches, node.nptr)
         length(matches) >= limit && break
     end
@@ -224,6 +245,23 @@ function select_stories_by_arrow(store::MemoryStore,
     for nptr in nodeptrs
         node = mem_get_node(store, nptr)
         isnothing(node) && continue
+        _matches_arrow_filter(node, arrowptrs, sttypes) || continue
+        push!(matches, node.nptr)
+        length(matches) >= limit && break
+    end
+    return matches
+end
+
+function select_stories_by_arrow(store::DBStore,
+                                 nodeptrs::Vector{NodePtr},
+                                 arrowptrs::Vector{ArrowPtr},
+                                 sttypes::Vector{Int},
+                                 limit::Int)
+    matches = NodePtr[]
+    for nptr in nodeptrs
+        node = db_get_node(store, nptr)
+        isempty(node.s) && continue
+        _matches_arrow_filter(node, arrowptrs, sttypes) || continue
         push!(matches, node.nptr)
         length(matches) >= limit && break
     end

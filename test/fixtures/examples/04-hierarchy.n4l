@@ -1,0 +1,6 @@
+-library
+
+library
+library (contain) shelf
+shelf (contain) book
+book (note) annotated copy

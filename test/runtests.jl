@@ -2,6 +2,7 @@ using Test
 using SemanticSpacetime
 
 @testset "SemanticSpacetime.jl" begin
+    include("fixture_paths.jl")
     include("test_types.jl")
     include("test_arrows.jl")
     include("test_context.jl")

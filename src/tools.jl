@@ -48,6 +48,11 @@ Returns a formatted string suitable for terminal output.
 """
 function browse_notes(sst::SSTConnection, chapter::String;
                       page::Int=1, width::Int=SCREENWIDTH)
+    if sst.conn === nothing
+        @warn "Cannot browse notes without an active database connection" chapter=chapter
+        return ""
+    end
+
     ec = sql_escape(chapter)
     search = "%" * ec * "%"
 
@@ -60,42 +65,37 @@ function browse_notes(sst::SSTConnection, chapter::String;
     last_chap = ""
     last_ctx = ""
 
-    try
-        result = execute_sql_strict(sst.conn, sql)
-        for row in LibPQ.Columns(result)
-            chap = something(row[1], "")
-            ctx_ptr = something(row[3], 0)
-            ctx_str = ctx_ptr > 0 ? get_context(ctx_ptr) : ""
+    result = execute_sql_strict(sst, sql)
+    for row in LibPQ.Columns(result)
+        chap = something(row[1], "")
+        ctx_ptr = something(row[3], 0)
+        ctx_str = ctx_ptr > 0 ? get_context(ctx_ptr) : ""
 
-            if chap != last_chap || ctx_str != last_ctx
-                println(io)
-                println(io, repeat('-', min(width - LEFTMARGIN - RIGHTMARGIN, 60)))
-                println(io)
-                println(io, "Title: ", chap)
-                println(io, "Context: ", ctx_str)
-                println(io, repeat('-', min(width - LEFTMARGIN - RIGHTMARGIN, 60)))
-                println(io)
-                last_chap = chap
-                last_ctx = ctx_str
-            end
+        if chap != last_chap || ctx_str != last_ctx
+            println(io)
+            println(io, repeat('-', min(width - LEFTMARGIN - RIGHTMARGIN, 60)))
+            println(io)
+            println(io, "Title: ", chap)
+            println(io, "Context: ", ctx_str)
+            println(io, repeat('-', min(width - LEFTMARGIN - RIGHTMARGIN, 60)))
+            println(io)
+            last_chap = chap
+            last_ctx = ctx_str
+        end
 
-            # Parse and render path links
-            path_val = row[5]
-            if !isnothing(path_val) && !ismissing(path_val)
-                links = parse_link_array(string(path_val))
-                for (j, lnk) in enumerate(links)
-                    node = get_db_node_by_nodeptr(sst, lnk.dst)
-                    if j == 1
-                        print(io, "\n", node.s, " ")
-                    else
-                        arrow = get_arrow_by_ptr(lnk.arr)
-                        print(io, "(", arrow.long, ") ", node.s, " ")
-                    end
+        path_val = row[5]
+        if !isnothing(path_val) && !ismissing(path_val)
+            links = parse_link_array(string(path_val))
+            for (j, lnk) in enumerate(links)
+                node = get_db_node_by_nodeptr(sst, lnk.dst)
+                if j == 1
+                    print(io, "\n", node.s, " ")
+                else
+                    arrow = get_arrow_by_ptr(lnk.arr)
+                    print(io, "(", arrow.long, ") ", node.s, " ")
                 end
             end
         end
-    catch e
-        @warn "Notes browse failed" chapter=chapter exception=e
     end
 
     println(io)

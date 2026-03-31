@@ -5,11 +5,10 @@ Compares in-memory Julia graph construction against Python's DB-backed API.
 Python benchmarks require psycopg2 and a database; they skip gracefully.
 
 Usage:
-    julia --project=. benchmarks/bench_vs_python.jl
+    julia --project=benchmarks benchmarks/bench_vs_python.jl
 """
 
 using SemanticSpacetime
-using BenchmarkTools
 using Printf
 
 # ─── Configuration ────────────────────────────────────────────────────────
@@ -21,8 +20,6 @@ const HAS_PYTHON  = try success(`python3 -c "import psycopg2"`); catch; false; e
 # ─── Helpers ──────────────────────────────────────────────────────────────
 
 function setup_arrows!()
-    SemanticSpacetime.reset_arrows!()
-    SemanticSpacetime.reset_contexts!()
     fwd = insert_arrow!("LEADSTO", "then", "leads to next", "+")
     bwd = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
     insert_inverse_arrow!(fwd, bwd)
@@ -32,18 +29,20 @@ end
 # ─── Julia benchmark ─────────────────────────────────────────────────────
 
 function julia_bench(n::Int)
-    setup_arrows!()
-    t0 = time_ns()
-    store = MemoryStore()
-    nodes = Node[]
-    for i in 1:n
-        push!(nodes, mem_vertex!(store, "py_cmp_node_$i", "bench"))
+    return with_registry_state(reset=true) do
+        setup_arrows!()
+        t0 = time_ns()
+        store = MemoryStore()
+        nodes = Node[]
+        for i in 1:n
+            push!(nodes, mem_vertex!(store, "py_cmp_node_$i", "bench"))
+        end
+        for i in 1:n-1
+            mem_edge!(store, nodes[i], "then", nodes[i+1])
+        end
+        elapsed_ms = (time_ns() - t0) / 1e6
+        return elapsed_ms, node_count(store), link_count(store)
     end
-    for i in 1:n-1
-        mem_edge!(store, nodes[i], "then", nodes[i+1])
-    end
-    elapsed_ms = (time_ns() - t0) / 1e6
-    return elapsed_ms, node_count(store), link_count(store)
 end
 
 # ─── Python benchmark ────────────────────────────────────────────────────

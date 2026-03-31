@@ -139,7 +139,7 @@ include("pagemap_ops.jl")
 # Database download/sync
 include("db_sync.jl")
 
-# Visualization (CairoMakie-based, gracefully handles missing dep)
+# Visualization (CairoMakie-based plotting and DOT export)
 include("visualization.jl")
 
 # Todo features: focal view, ETC validation integration, provenance
@@ -329,7 +329,7 @@ export
 
     # N4L parser
     N4LState, N4LResult, N4LParseError,
-    parse_n4l, parse_n4l_file, parse_config_file,
+    parse_n4l, parse_n4l_file, parse_config_file, load_config!,
     find_config_dir, read_config_files, add_mandatory_arrows!,
     has_errors, has_warnings,
     ROLE_EVENT, ROLE_RELATION, ROLE_SECTION, ROLE_CONTEXT,
@@ -405,7 +405,7 @@ export
     # Syntactic sugar
     @n4l_str, @sst, @compile, @graph,
     connect!, links, neighbors, nodes, eachnode, eachlink,
-    find_nodes, map_nodes, with_store, with_config,
+    find_nodes, map_nodes, with_store, with_registry_state, with_config,
 
     # Todo features 2: unified search, combinatorial, SQL indexing
     UnifiedSearchParams, unified_search,

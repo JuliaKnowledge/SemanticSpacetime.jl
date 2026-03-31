@@ -32,6 +32,10 @@ results = mem_search_text(store, "hello")
 
 For persistent storage, load a database extension. The `DBStore` uses DBInterface.jl so the same API works across backends.
 
+The main package already includes the PostgreSQL-oriented `SSTConnection`
+surface, the Genie HTTP server, and CairoMakie plotting support. SQLite and
+DuckDB become available by loading those packages explicitly.
+
 ### SQLite
 
 ```julia

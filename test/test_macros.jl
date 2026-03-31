@@ -1,16 +1,8 @@
 @testset "Syntactic Sugar" begin
 
-    config_dir = let d = joinpath(@__DIR__, "..", "..", "SSTorytime", "SSTconfig")
-        isdir(d) ? d : nothing
-    end
-
     # Helper: load full config or just mandatory arrows
     function _load_arrows()
-        SemanticSpacetime.reset_arrows!()
-        add_mandatory_arrows!()
-        if config_dir !== nothing
-            read_config_files(config_dir)
-        end
+        load_test_config!()
     end
 
     @testset "n4l string macro" begin
@@ -259,5 +251,53 @@
         output = String(take!(buf))
         @test occursin("N4LResult", output)
         @test occursin("Errors:", output)
+    end
+
+    @testset "with_config loads and restores config" begin
+        SemanticSpacetime.reset_arrows!()
+        SemanticSpacetime.reset_contexts!()
+        add_mandatory_arrows!()
+        @test get_arrow_by_name("remark") === nothing
+
+        with_config(TEST_SST_CONFIG_DIR) do
+            @test get_arrow_by_name("remark") !== nothing
+            store = MemoryStore()
+            a = mem_vertex!(store, "alpha", "cfg")
+            b = mem_vertex!(store, "beta", "cfg")
+            arr, st = connect!(store, a, "remark", b)
+            @test arr > 0
+            @test abs(st) == Int(EXPRESS)
+
+            result = parse_n4l("-cfg\n\n alpha (remark) beta\n"; load_config=false)
+            @test !has_errors(result)
+        end
+
+        @test get_arrow_by_name("remark") === nothing
+    end
+
+    @testset "with_registry_state restores arrows and contexts" begin
+        SemanticSpacetime.reset_arrows!()
+        SemanticSpacetime.reset_contexts!()
+        add_mandatory_arrows!()
+
+        outer_ctx = SemanticSpacetime.register_context!(["outer"])
+        outer_arrow_count = length(SemanticSpacetime.arrow_directory())
+
+        with_registry_state(reset=true) do
+            @test get_arrow_by_name("then") === nothing
+            @test SemanticSpacetime.get_context_ptr("outer") == 0
+
+            insert_arrow!("LEADSTO", "temp", "temporary link", "+")
+            SemanticSpacetime.register_context!(["inner"])
+
+            @test get_arrow_by_name("temp") !== nothing
+            @test SemanticSpacetime.get_context_ptr("inner") > 0
+        end
+
+        @test get_arrow_by_name("temp") === nothing
+        @test get_arrow_by_name("then") !== nothing
+        @test SemanticSpacetime.get_context_ptr("inner") == 0
+        @test SemanticSpacetime.get_context_ptr("outer") == outer_ctx
+        @test length(SemanticSpacetime.arrow_directory()) == outer_arrow_count
     end
 end

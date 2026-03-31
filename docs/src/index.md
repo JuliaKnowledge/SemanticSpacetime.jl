@@ -2,7 +2,7 @@
 
 A Julia implementation of the [SSTorytime](https://github.com/markburgess/SSTorytime) knowledge graph system, based on Semantic Spacetime (SST) — a theory of process-oriented knowledge representation by Mark Burgess.
 
-SemanticSpacetime.jl provides a typed, weighted graph API with multiple storage backends — an in-memory store for lightweight use, and a portable SQL store via [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) supporting SQLite, DuckDB, PostgreSQL, and other compatible databases.
+SemanticSpacetime.jl provides a typed, weighted graph API with multiple storage backends — an in-memory store for lightweight use, a portable SQL store via [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) for SQLite, DuckDB, and similar engines, plus the original PostgreSQL-oriented `SSTConnection` backend.
 
 **SemanticSpacetime.jl is an independent knowledge graph based on Semantic Spacetime. It is not an RDF or Topic Maps project. It aims to be both easier to use and more powerful than RDF for representing process knowledge.**
 
@@ -43,10 +43,17 @@ using Pkg
 Pkg.add(url="https://github.com/JuliaKnowledge/SemanticSpacetime.jl")
 ```
 
+The main package currently includes PostgreSQL (`LibPQ.jl`), HTTP (`Genie.jl`),
+and plotting (`CairoMakie.jl`) support. SQLite and DuckDB are activated by
+loading their packages alongside `SemanticSpacetime`.
+
 ## Quick Start
 
 ```julia
 using SemanticSpacetime
+
+# Register built-in arrows before creating links
+add_mandatory_arrows!()
 
 # Create an in-memory store (no database required)
 store = MemoryStore()

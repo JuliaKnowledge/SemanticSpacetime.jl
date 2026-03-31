@@ -39,6 +39,11 @@ function _check_cairomakie()
     return true
 end
 
+function _cairomakie_module()
+    _check_cairomakie() || return nothing
+    return getfield(@__MODULE__, :CairoMakie)
+end
+
 """
     plot_cone(store::AbstractSSTStore, cone::Vector{Vector{Link}};
               title::String="Causal Cone", kwargs...)
@@ -51,12 +56,11 @@ Returns a CairoMakie Figure, or `nothing` if CairoMakie is unavailable.
 """
 function plot_cone(store::AbstractSSTStore, cone::Vector{Vector{Link}};
                    title::String="Causal Cone", swimlanes::Int=1, kwargs...)
-    _check_cairomakie() || return nothing
+    CairoMakie = _cairomakie_module()
+    CairoMakie === nothing && return nothing
 
     coords = assign_cone_coordinates(cone, 1, swimlanes)
     isempty(coords) && return nothing
-
-    CairoMakie = @eval Main.CairoMakie
 
     fig = CairoMakie.Figure(; size=(800, 600))
     ax = CairoMakie.Axis(fig[1, 1]; title=title, xlabel="Lane", ylabel="Depth")
@@ -69,8 +73,8 @@ function plot_cone(store::AbstractSSTStore, cone::Vector{Vector{Link}};
     for (nptr, c) in coords
         push!(xs, c.x)
         push!(ys, c.z)
-        node = mem_get_node(store, nptr)
-        push!(labels, isnothing(node) ? string(nptr) : node.s)
+        node = _maybe_store_node(store, nptr)
+        push!(labels, node === nothing ? string(nptr) : node.s)
     end
 
     # Draw links
@@ -112,16 +116,15 @@ Returns a CairoMakie Figure, or `nothing` if CairoMakie is unavailable.
 """
 function plot_orbit(store::AbstractSSTStore, nptr::NodePtr, orbits::Vector{Vector{Orbit}};
                     title::String="Node Orbit", kwargs...)
-    _check_cairomakie() || return nothing
-
-    CairoMakie = @eval Main.CairoMakie
+    CairoMakie = _cairomakie_module()
+    CairoMakie === nothing && return nothing
 
     fig = CairoMakie.Figure(; size=(600, 600))
     ax = CairoMakie.Axis(fig[1, 1]; title=title, aspect=CairoMakie.DataAspect())
 
     # Central node
-    node = mem_get_node(store, nptr)
-    center_label = isnothing(node) ? string(nptr) : node.s
+    node = _maybe_store_node(store, nptr)
+    center_label = node === nothing ? string(nptr) : node.s
 
     CairoMakie.scatter!(ax, [0.0], [0.0]; markersize=15, color=:black)
     CairoMakie.text!(ax, 0.0, 0.0; text=center_label, fontsize=10, align=(:center, :bottom))
@@ -150,14 +153,13 @@ Overview: node count by type, degree distribution as a bar plot.
 Returns a CairoMakie Figure, or `nothing` if CairoMakie is unavailable.
 """
 function plot_graph_summary(store::AbstractSSTStore; chapter::String="", kwargs...)
-    _check_cairomakie() || return nothing
-
-    CairoMakie = @eval Main.CairoMakie
+    CairoMakie = _cairomakie_module()
+    CairoMakie === nothing && return nothing
 
     # Count nodes by text size class
     class_counts = Dict{Int,Int}()
-    for (nptr, _) in store.nodes
-        c = nptr.class
+    for node in nodes(store; chapter=chapter)
+        c = node.nptr.class
         class_counts[c] = get(class_counts, c, 0) + 1
     end
 
@@ -183,9 +185,8 @@ Heatmap of an adjacency matrix.
 Returns a CairoMakie Figure, or `nothing` if CairoMakie is unavailable.
 """
 function plot_adjacency_heatmap(adj::Matrix{Float32}; labels::Vector{String}=String[], kwargs...)
-    _check_cairomakie() || return nothing
-
-    CairoMakie = @eval Main.CairoMakie
+    CairoMakie = _cairomakie_module()
+    CairoMakie === nothing && return nothing
 
     fig = CairoMakie.Figure(; size=(600, 600))
     ax = CairoMakie.Axis(fig[1, 1]; title="Adjacency Heatmap")
@@ -207,8 +208,8 @@ end
 Save a CairoMakie figure to file (PNG, SVG, PDF based on extension).
 """
 function save_plot(fig, filename::AbstractString)
-    _check_cairomakie() || return nothing
-    CairoMakie = @eval Main.CairoMakie
+    CairoMakie = _cairomakie_module()
+    CairoMakie === nothing && return nothing
     CairoMakie.save(filename, fig)
     nothing
 end
@@ -231,10 +232,11 @@ function to_dot(store::AbstractSSTStore; chapter::String="", title::String="SST"
          0 => "green",   1 => "gold",  2 => "orange", 3 => "red",
     )
 
-    for (nptr, node) in store.nodes
+    for node in nodes(store)
         if !isempty(chapter) && node.chap != chapter
             continue
         end
+        nptr = node.nptr
         id = _dot_node_id(nptr)
         label = _dot_escape(node.s)
         println(io, "  ", id, " [label=\"", label, "\"];")

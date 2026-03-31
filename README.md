@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/JuliaKnowledge/SemanticSpacetime.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaKnowledge/SemanticSpacetime.jl/actions/workflows/CI.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Julia port of the [SSTorytime](https://github.com/markburgess/SSTorytime) knowledge graph system, based on Semantic Spacetime (SST) — a theory of process-oriented knowledge representation. SemanticSpacetime.jl provides a typed, weighted graph API with multiple storage backends — an in-memory store for lightweight use, and a portable SQL store via [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) supporting SQLite, DuckDB, PostgreSQL, and other compatible databases — for building, querying, and analysing knowledge maps.
+A Julia port of the [SSTorytime](https://github.com/markburgess/SSTorytime) knowledge graph system, based on Semantic Spacetime (SST) — a theory of process-oriented knowledge representation. SemanticSpacetime.jl provides a typed, weighted graph API with multiple storage backends — an in-memory store for lightweight use, a portable SQL store via [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) for SQLite, DuckDB, and similar engines, plus the original PostgreSQL-oriented `SSTConnection` backend — for building, querying, and analysing knowledge maps.
 
 **SemanticSpacetime.jl is an independent knowledge graph based on Semantic Spacetime. It is not an RDF or Topic Maps project. It aims to be both easier to use and more powerful than RDF for representing process knowledge.**
 
@@ -13,6 +13,11 @@ A Julia port of the [SSTorytime](https://github.com/markburgess/SSTorytime) know
 using Pkg
 Pkg.add(url="https://github.com/JuliaKnowledge/SemanticSpacetime.jl")
 ```
+
+The current package ships PostgreSQL (`LibPQ.jl`), HTTP server (`Genie.jl`), and
+visualization (`CairoMakie.jl`) support in the main install. SQLite and DuckDB
+stay extension-based: load the backend package as needed with `using SQLite` or
+`using DuckDB`.
 
 Or from the Pkg REPL:
 
@@ -24,6 +29,9 @@ pkg> add https://github.com/JuliaKnowledge/SemanticSpacetime.jl
 
 ```julia
 using SemanticSpacetime
+
+# Register built-in arrows before creating links
+add_mandatory_arrows!()
 
 # Create an in-memory store (no database required)
 store = MemoryStore()
@@ -61,8 +69,8 @@ store = open_sqlite()               # in-memory SQLite (or open_duckdb())
 | Graph analysis (sources, sinks, cycles, centrality) | ✅ | `graph_report.jl` |
 | N4L parser and compiler (Notes For Learning) | ✅ | `n4l_parser.jl`, `n4l_compiler.jl`, `n4l_standalone.jl` |
 | Search and path solving | ✅ | `search.jl`, `pathsolve.jl`, `cone_search.jl`, `weighted_search.jl` |
-| Web interface / HTTP server | ✅ | `http_server.jl`, `web_types.jl` |
-| Visualization (CairoMakie plots, GraphViz DOT export) | ✅ | `visualization.jl` |
+| Web interface / HTTP server | ✅ | `http_server.jl`, `web_types.jl` (`Genie.jl`) |
+| Visualization (CairoMakie plots, GraphViz DOT export) | ✅ | `visualization.jl` (`CairoMakie` for plots) |
 
 ## The SST Type System
 
@@ -163,18 +171,28 @@ The following vignettes provide worked examples and in-depth guides. Each is ava
 
 ## Dependencies
 
-Core:
+Core runtime:
 
 - [DBInterface.jl](https://github.com/JuliaDatabases/DBInterface.jl) — Portable database abstraction
 - [JSON3.jl](https://github.com/quinnj/JSON3.jl) — JSON serialization
 - [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl) — Graph algorithms
 - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/) — Matrix operations (stdlib)
+- [LibPQ.jl](https://github.com/iamed2/LibPQ.jl) — PostgreSQL `SSTConnection` backend
+- [Genie.jl](https://github.com/GenieFramework/Genie.jl) — HTTP server surface
+- [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl) — plot rendering
 
-Optional backends (loaded as extensions):
+Extension-loaded backends:
 
 - [SQLite.jl](https://github.com/JuliaDatabases/SQLite.jl) — SQLite backend
 - [DuckDB.jl](https://github.com/duckdb/duckdb-julia) — DuckDB backend
-- [LibPQ.jl](https://github.com/iamed2/LibPQ.jl) — PostgreSQL backend
+
+Additional tooling:
+
+- `BenchmarkTools.jl` lives in the dedicated `benchmarks/` environment; run
+  benchmark scripts with `julia --project=benchmarks ...`
+- DuckDB-specific integration tests require `using DuckDB`
+- Go/Python comparison benchmarks require the sibling `../SSTorytime` checkout and
+  external language tooling
 
 ## Related Projects
 

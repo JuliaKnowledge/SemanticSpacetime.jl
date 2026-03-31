@@ -324,16 +324,30 @@ end
 # ──────────────────────────────────────────────────────────────────
 
 """
-    nodes(store::MemoryStore) -> Vector{Node}
+    nodes(store::AbstractSSTStore; chapter::String="") -> Vector{Node}
 
 Get all nodes in the store as a vector.
 """
-function nodes(store::MemoryStore)::Vector{Node}
-    return collect(values(store.nodes))
+function nodes(store::MemoryStore; chapter::String="")::Vector{Node}
+    all_nodes = collect(values(store.nodes))
+    isempty(chapter) && return all_nodes
+    return [node for node in all_nodes if node.chap == chapter]
+end
+
+function nodes(store::DBStore; chapter::String="")::Vector{Node}
+    sql = "SELECT class, cptr FROM sst_nodes"
+    params = Any[]
+    if !isempty(chapter)
+        sql *= " WHERE chapter = ?"
+        push!(params, chapter)
+    end
+    sql *= " ORDER BY class, cptr"
+    rows = _collect_rows(DBInterface.execute(store.conn, sql, params))
+    return [db_get_node(store, NodePtr(Int(row[1]), Int(row[2]))) for row in rows]
 end
 
 """
-    eachnode(store::MemoryStore)
+    eachnode(store::AbstractSSTStore; chapter::String="")
 
 Iterate over all nodes in the store.
 
@@ -344,8 +358,8 @@ for node in eachnode(store)
 end
 ```
 """
-function eachnode(store::MemoryStore)
-    return values(store.nodes)
+function eachnode(store::AbstractSSTStore; chapter::String="")
+    return nodes(store; chapter=chapter)
 end
 
 """
@@ -379,7 +393,7 @@ end
 # ──────────────────────────────────────────────────────────────────
 
 """
-    find_nodes(store::MemoryStore, predicate::Function) -> Vector{Node}
+    find_nodes(store::AbstractSSTStore, predicate::Function) -> Vector{Node}
 
 Find all nodes matching a predicate.
 
@@ -392,12 +406,12 @@ long_nodes = find_nodes(store, n -> n.l > 100)
 ch_nodes = find_nodes(store, n -> n.chap == "vocabulary")
 ```
 """
-function find_nodes(store::MemoryStore, predicate::Function)::Vector{Node}
-    return filter(predicate, collect(values(store.nodes)))
+function find_nodes(store::AbstractSSTStore, predicate::Function)::Vector{Node}
+    return filter(predicate, nodes(store))
 end
 
 """
-    find_nodes(store::MemoryStore, pattern::Regex) -> Vector{Node}
+    find_nodes(store::AbstractSSTStore, pattern::Regex) -> Vector{Node}
 
 Find all nodes whose text matches a regex pattern.
 
@@ -406,12 +420,12 @@ Find all nodes whose text matches a regex pattern.
 fruit_nodes = find_nodes(store, r"fruit|apple|banana"i)
 ```
 """
-function find_nodes(store::MemoryStore, pattern::Regex)::Vector{Node}
-    return filter(n -> occursin(pattern, n.s), collect(values(store.nodes)))
+function find_nodes(store::AbstractSSTStore, pattern::Regex)::Vector{Node}
+    return filter(n -> occursin(pattern, n.s), nodes(store))
 end
 
 """
-    map_nodes(f::Function, store::MemoryStore) -> Vector
+    map_nodes(f::Function, store::AbstractSSTStore) -> Vector
 
 Apply a function to each node and collect results.
 
@@ -420,8 +434,8 @@ Apply a function to each node and collect results.
 names = map_nodes(n -> n.s, store)
 ```
 """
-function map_nodes(f::Function, store::MemoryStore)
-    return map(f, collect(values(store.nodes)))
+function map_nodes(f::Function, store::AbstractSSTStore)
+    return map(f, nodes(store))
 end
 
 # ──────────────────────────────────────────────────────────────────
@@ -454,6 +468,69 @@ function with_store(f::Function, store::MemoryStore)
     return store
 end
 
+function _snapshot_arrow_context_state()
+    return (
+        arrows = copy(_ARROW_DIRECTORY),
+        arrow_short_dir = copy(_ARROW_SHORT_DIR),
+        arrow_long_dir = copy(_ARROW_LONG_DIR),
+        inverse_arrows = copy(_INVERSE_ARROWS),
+        ignore_arrows = copy(_IGNORE_ARROWS),
+        arrow_top = _ARROW_DIRECTORY_TOP[],
+        contexts = copy(_CONTEXT_DIRECTORY),
+        context_dir = copy(_CONTEXT_DIR),
+        context_top = _CONTEXT_TOP[],
+    )
+end
+
+function _restore_arrow_context_state!(state)
+    reset_arrows!()
+    append!(_ARROW_DIRECTORY, state.arrows)
+    merge!(_ARROW_SHORT_DIR, state.arrow_short_dir)
+    merge!(_ARROW_LONG_DIR, state.arrow_long_dir)
+    merge!(_INVERSE_ARROWS, state.inverse_arrows)
+    append!(_IGNORE_ARROWS, state.ignore_arrows)
+    _ARROW_DIRECTORY_TOP[] = state.arrow_top
+
+    reset_contexts!()
+    append!(_CONTEXT_DIRECTORY, state.contexts)
+    merge!(_CONTEXT_DIR, state.context_dir)
+    _CONTEXT_TOP[] = state.context_top
+    nothing
+end
+
+"""
+    with_registry_state(f::Function; reset::Bool=false, config_dir::Union{Nothing,AbstractString}=nothing)
+
+Execute a function with temporary arrow/context registry changes, restoring the
+previous module-level state afterwards.
+
+- Set `reset=true` to start from a clean registry inside the block.
+- Set `config_dir` to load an SSTconfig directory inside the temporary scope.
+
+# Example
+```julia
+with_registry_state(reset=true, config_dir="/path/to/SSTconfig") do
+    @assert get_arrow_by_name("remark") !== nothing
+end
+```
+"""
+function with_registry_state(f::Function; reset::Bool=false,
+                             config_dir::Union{Nothing,AbstractString}=nothing)
+    state = _snapshot_arrow_context_state()
+    try
+        if reset
+            reset_arrows!()
+            reset_contexts!()
+        end
+        if !isnothing(config_dir)
+            load_config!(String(config_dir); reset=false)
+        end
+        return f()
+    finally
+        _restore_arrow_context_state!(state)
+    end
+end
+
 """
     with_config(f::Function, config_dir::String)
 
@@ -462,14 +539,13 @@ Execute a function after loading SST arrow configuration.
 # Example
 ```julia
 with_config("/path/to/SSTconfig") do
-    result = parse_n4l("-section\\n apple (contains) fruit\\n")
+    result = parse_n4l("-section\\n apple (contain) fruit\\n"; load_config=false)
     @show result
 end
 ```
 """
 function with_config(f::Function, config_dir::String)
-    read_config_files(config_dir)
-    return f()
+    return with_registry_state(f; reset=true, config_dir=config_dir)
 end
 
 # ──────────────────────────────────────────────────────────────────

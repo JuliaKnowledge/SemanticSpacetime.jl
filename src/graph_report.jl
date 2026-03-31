@@ -62,6 +62,36 @@ end
 # ──────────────────────────────────────────────────────────────────
 
 """
+    build_adjacency(store::AbstractSSTStore; arrows::Vector{ArrowPtr}=ArrowPtr[], chapter::String="") -> AdjacencyMatrix
+
+Build an adjacency matrix from an in-memory or DBInterface-backed store. If
+`arrows` is non-empty, only links using those arrow types are included. If
+`chapter` is non-empty, only nodes in matching chapters are included.
+"""
+function build_adjacency(store::AbstractSSTStore; arrows::Vector{ArrowPtr}=ArrowPtr[], chapter::String="")
+    adj = AdjacencyMatrix()
+    arrow_set = isempty(arrows) ? nothing : Set(arrows)
+
+    for node in nodes(store)
+        if !isempty(chapter) && !occursin(lowercase(chapter), lowercase(node.chap))
+            continue
+        end
+
+        push!(adj.nodes, node.nptr)
+        for bucket in node.incidence
+            for lnk in bucket
+                if !isnothing(arrow_set) && !(lnk.arr in arrow_set)
+                    continue
+                end
+                add_edge!(adj, node.nptr, lnk.dst, Float64(lnk.wgt))
+            end
+        end
+    end
+
+    return adj
+end
+
+"""
     build_adjacency(sst::SSTConnection; arrows::Vector{ArrowPtr}=ArrowPtr[], chapter::String="") -> AdjacencyMatrix
 
 Build an adjacency matrix from the SST database. If `arrows` is non-empty,

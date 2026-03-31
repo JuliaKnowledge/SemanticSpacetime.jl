@@ -62,6 +62,27 @@ function find_paths(store::MemoryStore, begin_node::NodePtr, end_node::NodePtr;
     return PathResult(dag_paths, loop_paths)
 end
 
+function find_paths(store::DBStore, begin_node::NodePtr, end_node::NodePtr;
+                    chapter::String="", context::Vector{String}=String[],
+                    max_depth::Int=10)
+    all_paths = Vector{NodePtr}[]
+    _dfs_paths!(store, begin_node, end_node, max_depth,
+                [begin_node], Set{NodePtr}([begin_node]), all_paths)
+
+    dag_paths = Vector{NodePtr}[]
+    loop_paths = Vector{NodePtr}[]
+
+    for path in all_paths
+        if _is_dag_path(path)
+            push!(dag_paths, path)
+        else
+            push!(loop_paths, path)
+        end
+    end
+
+    return PathResult(dag_paths, loop_paths)
+end
+
 """
 Depth-first search collecting all paths from `current` to `target`.
 """
@@ -78,6 +99,39 @@ function _dfs_paths!(store::MemoryStore, current::NodePtr, target::NodePtr,
     for stidx in 1:ST_TOP
         st = index_to_sttype(stidx)
         st <= 0 && continue   # forward only
+
+        for lnk in node.incidence[stidx]
+            new_prefix = vcat(prefix, [lnk.dst])
+
+            if lnk.dst == target
+                push!(results, new_prefix)
+                continue
+            end
+
+            lnk.dst in visited && continue
+
+            push!(visited, lnk.dst)
+            _dfs_paths!(store, lnk.dst, target, remaining - 1,
+                        new_prefix, visited, results)
+            delete!(visited, lnk.dst)
+        end
+    end
+
+    nothing
+end
+
+function _dfs_paths!(store::DBStore, current::NodePtr, target::NodePtr,
+                     remaining::Int, prefix::Vector{NodePtr},
+                     visited::Set{NodePtr},
+                     results::Vector{Vector{NodePtr}})
+    remaining <= 0 && return nothing
+
+    node = db_get_node(store, current)
+    isempty(node.s) && return nothing
+
+    for stidx in 1:ST_TOP
+        st = index_to_sttype(stidx)
+        st <= 0 && continue
 
         for lnk in node.incidence[stidx]
             new_prefix = vcat(prefix, [lnk.dst])

@@ -10,7 +10,6 @@ First, let's build a small graph to visualize:
 using SemanticSpacetime
 using CairoMakie
 CairoMakie.activate!() # hide
-using GraphViz
 
 add_mandatory_arrows!()
 store = MemoryStore()
@@ -28,10 +27,6 @@ mem_edge!(store, n2, "then", n3)
 mem_edge!(store, n3, "then", n4)
 mem_edge!(store, n4, "then", n5)
 mem_edge!(store, n5, "expresses", n6)
-
-# Make CairoMakie available for SST plot functions
-@eval Main import CairoMakie
-SemanticSpacetime._CAIROMAKIE_AVAILABLE[] = true
 nothing # hide
 ```
 
@@ -169,19 +164,12 @@ fig
 
 ## GraphViz DOT Export
 
-Export the graph as a [DOT](https://graphviz.org/doc/info/lang.html) string and render it inline using [`to_dot`](@ref):
+Export the graph as a [DOT](https://graphviz.org/doc/info/lang.html) string using [`to_dot`](@ref):
 
 ```@example viz
 dot_str = to_dot(store; title="Recipe")
-g = GraphViz.Graph(dot_str)
-# Render as SVG for display
-open("recipe_graph.svg", "w") do io
-    show(io, MIME("image/svg+xml"), g)
-end
-nothing # hide
+join(first(split(dot_str, '\n'), 8), "\n")
 ```
-
-![Recipe Graph](recipe_graph.svg)
 
 Save directly to a file with [`save_dot`](@ref):
 

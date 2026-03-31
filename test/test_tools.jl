@@ -64,15 +64,8 @@
     end
 
     @testset "browse_notes without DB" begin
-        # browse_notes should handle missing connection gracefully
         sst = SemanticSpacetime.SSTConnection(nothing, false, false)
-        # This should warn/return empty rather than crash
-        # (connection is nothing, so execute_sql_strict will error)
-        result = try
-            SemanticSpacetime.browse_notes(sst, "test_chapter")
-        catch
-            ""
-        end
-        @test result isa String
+        result = SemanticSpacetime.browse_notes(sst, "test_chapter")
+        @test result == ""
     end
 end

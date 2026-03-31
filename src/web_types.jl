@@ -120,6 +120,13 @@ function node_event_to_dict(ne::NodeEvent)
     )
 end
 
+_maybe_store_node(store::MemoryStore, nptr::NodePtr) = mem_get_node(store, nptr)
+
+function _maybe_store_node(store::DBStore, nptr::NodePtr)
+    node = mem_get_node(store, nptr)
+    return isempty(node.s) ? nothing : node
+end
+
 """
     json_node_event(store::AbstractSSTStore, nptr::NodePtr, xyz::Coords,
                     orbits::Vector{Vector{Orbit}}) -> NodeEvent
@@ -127,10 +134,10 @@ end
 Build a NodeEvent from a node pointer by looking up the node data
 in the store and combining it with the supplied coordinates and orbits.
 """
-function json_node_event(store::MemoryStore, nptr::NodePtr, xyz::Coords,
+function json_node_event(store::AbstractSSTStore, nptr::NodePtr, xyz::Coords,
                          orbits::Vector{Vector{Orbit}})
-    node = mem_get_node(store, nptr)
-    if isnothing(node)
+    node = _maybe_store_node(store, nptr)
+    if node === nothing
         return NodeEvent("", 0, "", "", nptr, xyz, orbits)
     end
     return NodeEvent(node.s, node.l, node.chap, "", nptr, xyz, orbits)
@@ -144,7 +151,7 @@ end
 Convert a vector of cone link-paths to WebPath format, resolving
 node names, arrow types, and context strings from the store.
 """
-function link_web_paths(store::MemoryStore, cone::Vector{Vector{Link}};
+function link_web_paths(store::AbstractSSTStore, cone::Vector{Vector{Link}};
                         chapter::String="", context::Vector{String}=String[],
                         limit::Int=100)
     result = Vector{WebPath}[]
@@ -154,9 +161,9 @@ function link_web_paths(store::MemoryStore, cone::Vector{Vector{Link}};
         count >= limit && break
         wp_path = WebPath[]
         for (i, lnk) in enumerate(path)
-            dst_node = mem_get_node(store, lnk.dst)
-            name = isnothing(dst_node) ? "" : dst_node.s
-            chp = isnothing(dst_node) ? "" : dst_node.chap
+            dst_node = _maybe_store_node(store, lnk.dst)
+            name = dst_node === nothing ? "" : dst_node.s
+            chp = dst_node === nothing ? "" : dst_node.chap
             ctx_str = get_context(lnk.ctx)
             stidx = try
                 entry = get_arrow_by_ptr(lnk.arr)
@@ -179,7 +186,7 @@ end
 
 Build a PageView-like dictionary from page map lines for JSON rendering.
 """
-function json_page(store::MemoryStore, maplines::Vector{PageMap})
+function json_page(store::AbstractSSTStore, maplines::Vector{PageMap})
     title = isempty(maplines) ? "" : maplines[1].chapter
     ctx_str = ""
     notes = Vector{WebPath}[]
@@ -187,9 +194,9 @@ function json_page(store::MemoryStore, maplines::Vector{PageMap})
     for pm in maplines
         wp_line = WebPath[]
         for (i, lnk) in enumerate(pm.path)
-            dst_node = mem_get_node(store, lnk.dst)
-            name = isnothing(dst_node) ? "" : dst_node.s
-            chp = isnothing(dst_node) ? "" : dst_node.chap
+            dst_node = _maybe_store_node(store, lnk.dst)
+            name = dst_node === nothing ? "" : dst_node.s
+            chp = dst_node === nothing ? "" : dst_node.chap
             ctx_s = get_context(lnk.ctx)
             stidx = try
                 entry = get_arrow_by_ptr(lnk.arr)

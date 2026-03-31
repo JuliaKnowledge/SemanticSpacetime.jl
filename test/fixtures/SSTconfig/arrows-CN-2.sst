@@ -1,0 +1,5 @@
+-contains
++contains (contain) -belongs to (belong)
++consists of (consists) -part of (partof)
++has point (has-pt) -point of (pt-of)
++set membership (setof) -member of set (member-of)

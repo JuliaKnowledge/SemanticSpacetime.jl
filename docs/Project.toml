@@ -1,9 +1,8 @@
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-GraphViz = "f526b714-d49f-11e8-06ff-31ed36ee7ee0"
 SemanticSpacetime = "5463dcf6-8304-4a9f-b648-b2c67b135757"
 
 [compat]
-CairoMakie = "0.15"
+CairoMakie = "0.15.8"
 Documenter = "1"

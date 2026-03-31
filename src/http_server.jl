@@ -73,7 +73,7 @@ end
 # Store-agnostic query helpers
 # ──────────────────────────────────────────────────────────────────
 
-function _search(store::MemoryStore, query::String)
+function _search(store::AbstractSSTStore, query::String)
     results = mem_search_text(store, query)
     return [_node_to_dict(n) for n in results]
 end
@@ -83,9 +83,9 @@ function _search(store::SSTConnection, query::String)
     return [_node_to_dict(n) for n in results]
 end
 
-function _get_node(store::MemoryStore, nptr::NodePtr)
-    node = mem_get_node(store, nptr)
-    isnothing(node) && return nothing
+function _get_node(store::AbstractSSTStore, nptr::NodePtr)
+    node = _maybe_store_node(store, nptr)
+    node === nothing && return nothing
     return _node_to_dict(node)
 end
 
@@ -95,9 +95,9 @@ function _get_node(store::SSTConnection, nptr::NodePtr)
     return _node_to_dict(node)
 end
 
-function _get_links(store::MemoryStore, nptr::NodePtr)
-    node = mem_get_node(store, nptr)
-    isnothing(node) && return nothing
+function _get_links(store::AbstractSSTStore, nptr::NodePtr)
+    node = _maybe_store_node(store, nptr)
+    node === nothing && return nothing
     channels = Dict{String,Any}()
     for stidx in 1:ST_TOP
         links = node.incidence[stidx]
@@ -119,37 +119,7 @@ function _get_links(store::SSTConnection, nptr::NodePtr)
     return channels
 end
 
-function _graph_report(store::MemoryStore)
-    adj = AdjacencyMatrix()
-    for (nptr, node) in store.nodes
-        push!(adj.nodes, nptr)
-        for stidx in 1:ST_TOP
-            for lnk in node.incidence[stidx]
-                add_edge!(adj, nptr, lnk.dst, Float64(lnk.wgt))
-            end
-        end
-    end
-    n_links = sum(length(nbrs) for (_, nbrs) in adj.outgoing; init=0)
-    sources = find_sources(adj)
-    sinks = find_sinks(adj)
-    evc = eigenvector_centrality(adj)
-    top_evc = if !isempty(evc)
-        sorted = sort(collect(evc); by=last, rev=true)
-        [Dict("node" => _nptr_to_dict(n), "centrality" => v)
-         for (n, v) in sorted[1:min(5, length(sorted))]]
-    else
-        []
-    end
-    Dict{String,Any}(
-        "nodes"     => length(adj.nodes),
-        "links"     => n_links,
-        "sources"   => length(sources),
-        "sinks"     => length(sinks),
-        "top_centrality" => top_evc,
-    )
-end
-
-function _graph_report(store::SSTConnection)
+function _graph_report(store::AbstractSSTStore)
     adj = build_adjacency(store)
     n_links = sum(length(nbrs) for (_, nbrs) in adj.outgoing; init=0)
     sources = find_sources(adj)
@@ -252,7 +222,7 @@ function handle_search_dispatch(store::AbstractSSTStore, search::SearchParameter
     return Dict{String,Any}("error" => "No matching handler for search")
 end
 
-function _handle_chapters(store::MemoryStore, search::SearchParameters)
+function _handle_chapters(store::AbstractSSTStore, search::SearchParameters)
     chapters = mem_get_chapters(store)
     if !isempty(search.chapter) && search.chapter != "%%"
         chapters = filter(c -> occursin(lowercase(search.chapter), lowercase(c)), chapters)
@@ -260,11 +230,11 @@ function _handle_chapters(store::MemoryStore, search::SearchParameters)
     Dict{String,Any}("chapters" => chapters)
 end
 
-function _handle_orbit(store::MemoryStore, search::SearchParameters)
+function _handle_orbit(store::AbstractSSTStore, search::SearchParameters)
     results = Dict{String,Any}[]
     for name in search.names
-        nodes = name == "%%" ? collect(values(store.nodes)) : mem_search_text(store, name)
-        for node in nodes
+        matched_nodes = name == "%%" ? nodes(store) : mem_search_text(store, name)
+        for node in matched_nodes
             orbits = get_node_orbit(store, node.nptr; limit=search.limit)
             orbits = set_orbit_coords(Coords(), orbits)
             ne = json_node_event(store, node.nptr, Coords(), orbits)
@@ -274,11 +244,11 @@ function _handle_orbit(store::MemoryStore, search::SearchParameters)
     Dict{String,Any}("type" => "orbit", "results" => results)
 end
 
-function _handle_causal_cone(store::MemoryStore, search::SearchParameters)
+function _handle_causal_cone(store::AbstractSSTStore, search::SearchParameters)
     all_results = Dict{String,Any}[]
     for name in search.names
-        nodes = mem_search_text(store, name)
-        for node in nodes
+        matched_nodes = mem_search_text(store, name)
+        for node in matched_nodes
             depth = search.depth > 0 ? search.depth : 5
             cr = if search.orientation == "backward"
                 backward_cone(store, node.nptr; depth, limit=search.limit)
@@ -297,7 +267,7 @@ function _handle_causal_cone(store::MemoryStore, search::SearchParameters)
     Dict{String,Any}("type" => "cone", "results" => all_results)
 end
 
-function _handle_path_solve(store::MemoryStore, search::SearchParameters)
+function _handle_path_solve(store::AbstractSSTStore, search::SearchParameters)
     depth = search.depth > 0 ? search.depth : 10
     pr = find_paths(store, search.from_node, search.to_node; max_depth=depth)
     Dict{String,Any}(
@@ -307,11 +277,11 @@ function _handle_path_solve(store::MemoryStore, search::SearchParameters)
     )
 end
 
-function _handle_stories(store::MemoryStore, search::SearchParameters)
+function _handle_stories(store::AbstractSSTStore, search::SearchParameters)
     results = Dict{String,Any}[]
     for name in search.names
-        nodes = mem_search_text(store, name)
-        for node in nodes
+        matched_nodes = mem_search_text(store, name)
+        for node in matched_nodes
             if node.seq
                 depth = search.depth > 0 ? search.depth : 5
                 cr = forward_cone(store, node.nptr; depth, limit=search.limit)
@@ -326,11 +296,10 @@ function _handle_stories(store::MemoryStore, search::SearchParameters)
     Dict{String,Any}("type" => "stories", "results" => results)
 end
 
-function _handle_matching_arrows(store::MemoryStore, search::SearchParameters)
+function _handle_matching_arrows(store::AbstractSSTStore, search::SearchParameters)
     sttypes = get_sttype_from_arrows(search.arrows)
-    # Find nodes matching name criteria, then filter by arrow
     all_nodes = if isempty(search.names)
-        collect(values(store.nodes))
+        nodes(store)
     else
         vcat([mem_search_text(store, n) for n in search.names]...)
     end
@@ -553,11 +522,7 @@ function register_routes!()
         srv = SERVER_STATE[]
         isnothing(srv) && return _genie_error("Server not initialized"; status=500)
         store = srv.store
-        chapters = if store isa MemoryStore
-            mem_get_chapters(store)
-        else
-            String[]
-        end
+        chapters = mem_get_chapters(store)
         _genie_json(Dict("chapters" => chapters))
     end
 
@@ -588,14 +553,8 @@ function register_routes!()
         isnothing(srv) && return _genie_error("Server not initialized"; status=500)
         store = srv.store
         chapter = getpayload(:chapter, "")
-        if store isa MemoryStore
-            maplines = filter(pm -> isempty(chapter) ||
-                occursin(lowercase(chapter), lowercase(pm.chapter)),
-                store.page_map)
-            _genie_json(json_page(store, maplines))
-        else
-            _genie_json(Dict("title" => "", "context" => "", "notes" => []))
-        end
+        maplines = get_page_map(store; chapter=chapter)
+        _genie_json(json_page(store, maplines))
     end
 
     # GET /api/stories?name=X
@@ -765,17 +724,13 @@ function register_ui_routes!()
         srv = SERVER_STATE[]
         isnothing(srv) && return _genie_error("Server not initialized"; status=500)
         store = srv.store
-        if store isa MemoryStore
-            chap_counts = Dict{String,Int}()
-            for (_, node) in store.nodes
-                chap_counts[node.chap] = get(chap_counts, node.chap, 0) + 1
-            end
-            chapters = [Dict("name" => ch, "count" => cnt) for (ch, cnt) in
-                        sort(collect(chap_counts), by=x -> -x.second)]
-            _genie_json(chapters)
-        else
-            _genie_json([])
+        chap_counts = Dict{String,Int}()
+        for node in nodes(store)
+            chap_counts[node.chap] = get(chap_counts, node.chap, 0) + 1
         end
+        chapters = [Dict("name" => ch, "count" => cnt) for (ch, cnt) in
+                    sort(collect(chap_counts), by=x -> -x.second)]
+        _genie_json(chapters)
     end
 
     # GET /api/chapter/nodes?name=... — list nodes in a specific chapter
@@ -785,13 +740,8 @@ function register_ui_routes!()
         name = getpayload(:name, "")
         isempty(name) && return _genie_error("Missing chapter name")
         store = srv.store
-        if store isa MemoryStore
-            results = [_node_to_dict(node) for (_, node) in store.nodes
-                       if node.chap == name]
-            _genie_json(Dict("query" => name, "results" => results))
-        else
-            _genie_json(Dict("query" => name, "results" => []))
-        end
+        results = [_node_to_dict(node) for node in nodes(store; chapter=name)]
+        _genie_json(Dict("query" => name, "results" => results))
     end
 
     # Enhanced /links — returns rich link data with destination node text
@@ -804,34 +754,29 @@ function register_ui_routes!()
             return _genie_error("Invalid node pointer parameters")
         nptr = NodePtr(cls, cptr)
         store = srv.store
-        if store isa MemoryStore
-            node = mem_get_node(store, nptr)
-            isnothing(node) && return _genie_error("Node not found"; status=404)
-            links = Dict{String,Any}[]
-            for (stidx, bucket) in enumerate(node.incidence)
-                st = index_to_sttype(stidx)
-                for lnk in bucket
-                    dst_node = mem_get_node(store, lnk.dst)
-                    dst_text = dst_node !== nothing ? dst_node.s : ""
-                    dst_chap = dst_node !== nothing ? dst_node.chap : ""
-                    arrow_entry = get_arrow_by_ptr(lnk.arr)
-                    arrow_name = arrow_entry !== nothing ? arrow_entry.short : "?"
-                    push!(links, Dict{String,Any}(
-                        "arrow" => lnk.arr,
-                        "arrow_name" => arrow_name,
-                        "sttype" => Int(st),
-                        "weight" => lnk.wgt,
-                        "context" => lnk.ctx,
-                        "dst" => _nptr_to_dict(lnk.dst),
-                        "dst_text" => first(split(dst_text, '\n')),
-                        "dst_chapter" => dst_chap,
-                    ))
-                end
+        node = _maybe_store_node(store, nptr)
+        node === nothing && return _genie_error("Node not found"; status=404)
+        links = Dict{String,Any}[]
+        for (stidx, bucket) in enumerate(node.incidence)
+            st = index_to_sttype(stidx)
+            for lnk in bucket
+                dst_node = _maybe_store_node(store, lnk.dst)
+                dst_text = dst_node === nothing ? "" : dst_node.s
+                dst_chap = dst_node === nothing ? "" : dst_node.chap
+                arrow_name = 1 <= lnk.arr <= length(_ARROW_DIRECTORY) ? get_arrow_by_ptr(lnk.arr).short : "?"
+                push!(links, Dict{String,Any}(
+                    "arrow" => lnk.arr,
+                    "arrow_name" => arrow_name,
+                    "sttype" => Int(st),
+                    "weight" => lnk.wgt,
+                    "context" => lnk.ctx,
+                    "dst" => _nptr_to_dict(lnk.dst),
+                    "dst_text" => first(split(dst_text, '\n')),
+                    "dst_chapter" => dst_chap,
+                ))
             end
-            _genie_json(Dict("links" => links, "count" => length(links)))
-        else
-            _genie_json(Dict("links" => [], "count" => 0))
         end
+        _genie_json(Dict("links" => links, "count" => length(links)))
     end
 
     # Enhanced orbit — returns satellite data structured for the UI canvas
@@ -844,45 +789,40 @@ function register_ui_routes!()
             return _genie_error("Invalid node pointer parameters")
         nptr = NodePtr(cls, cptr)
         store = srv.store
-        if store isa MemoryStore
-            node = mem_get_node(store, nptr)
-            isnothing(node) && return _genie_error("Node not found"; status=404)
-            center_text = first(split(node.s, '\n'))
+        node = _maybe_store_node(store, nptr)
+        node === nothing && return _genie_error("Node not found"; status=404)
+        center_text = first(split(node.s, '\n'))
 
-            satellites = Dict{String,Any}()
-            st_names = ["near", "leadsto", "contains", "express"]
-            # NEAR=index 4, -LEADSTO=3, LEADSTO=5, -CONTAINS=2, CONTAINS=6, -EXPRESS=1, EXPRESS=7
-            st_pairs = [(4,), (3, 5), (2, 6), (1, 7)]  # near, leadsto±, contains±, express±
+        satellites = Dict{String,Any}()
+        st_names = ["near", "leadsto", "contains", "express"]
+        st_pairs = [(4,), (3, 5), (2, 6), (1, 7)]
 
-            for (i, indices) in enumerate(st_pairs)
-                sat_nodes = Dict{String,Any}[]
-                seen = Set{NodePtr}()
-                for idx in indices
-                    idx < 1 || idx > length(node.incidence) && continue
-                    for lnk in node.incidence[idx]
-                        lnk.dst in seen && continue
-                        push!(seen, lnk.dst)
-                        dst = mem_get_node(store, lnk.dst)
-                        dst === nothing && continue
-                        push!(sat_nodes, Dict{String,Any}(
-                            "text" => first(split(dst.s, '\n')),
-                            "chapter" => dst.chap,
-                            "nptr" => _nptr_to_dict(lnk.dst),
-                        ))
-                    end
+        for (i, indices) in enumerate(st_pairs)
+            sat_nodes = Dict{String,Any}[]
+            seen = Set{NodePtr}()
+            for idx in indices
+                (idx < 1 || idx > length(node.incidence)) && continue
+                for lnk in node.incidence[idx]
+                    lnk.dst in seen && continue
+                    push!(seen, lnk.dst)
+                    dst = _maybe_store_node(store, lnk.dst)
+                    dst === nothing && continue
+                    push!(sat_nodes, Dict{String,Any}(
+                        "text" => first(split(dst.s, '\n')),
+                        "chapter" => dst.chap,
+                        "nptr" => _nptr_to_dict(lnk.dst),
+                    ))
                 end
-                satellites[st_names[i]] = sat_nodes
             end
-
-            _genie_json(Dict{String,Any}(
-                "center_text" => center_text,
-                "center_chapter" => node.chap,
-                "center_nptr" => _nptr_to_dict(nptr),
-                "satellites" => satellites,
-            ))
-        else
-            _genie_json(Dict{String,Any}("satellites" => Dict()))
+            satellites[st_names[i]] = sat_nodes
         end
+
+        _genie_json(Dict{String,Any}(
+            "center_text" => center_text,
+            "center_chapter" => node.chap,
+            "center_nptr" => _nptr_to_dict(nptr),
+            "satellites" => satellites,
+        ))
     end
 
     nothing

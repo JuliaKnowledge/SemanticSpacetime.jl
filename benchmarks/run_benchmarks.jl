@@ -5,7 +5,7 @@ Benchmarks SemanticSpacetime.jl in-memory operations using BenchmarkTools.
 Optionally shells out to Go and Python for cross-language comparison.
 
 Usage:
-    julia --project=. benchmarks/run_benchmarks.jl [OPTIONS]
+    julia --project=benchmarks benchmarks/run_benchmarks.jl [OPTIONS]
 
 Options:
     --julia-only     Run only Julia benchmarks (skip Go/Python)
@@ -45,11 +45,8 @@ struct BenchResult
     python_time_ns::Union{Float64, Nothing}
 end
 
-"""Set up arrows needed for benchmarks (idempotent via reset)."""
+"""Set up arrows needed for benchmarks inside a temporary registry scope."""
 function setup_arrows!()
-    SemanticSpacetime.reset_arrows!()
-    SemanticSpacetime.reset_contexts!()
-
     fwd = insert_arrow!("LEADSTO", "then", "leads to next", "+")
     bwd = insert_arrow!("LEADSTO", "prev", "preceded by", "-")
     insert_inverse_arrow!(fwd, bwd)
@@ -80,64 +77,65 @@ end
 # ─── Julia Benchmarks ────────────────────────────────────────────────────
 
 function bench_node_creation(n::Int)
-    setup_arrows!()
-    b = @benchmark begin
-        store = MemoryStore()
-        for i in 1:$n
-            mem_vertex!(store, "bench_node_$i", "bench_ch")
-        end
-    end
-    return b
-end
-
-function bench_edge_creation(n::Int)
-    setup_arrows!()
-    # Pre-create a store with nodes, then benchmark adding edges to a fresh copy
-    b = @benchmark begin
-        s = MemoryStore()
-        nds = Node[]
-        for i in 1:$n
-            push!(nds, mem_vertex!(s, "edge_node_$i", "bench_ch"))
-        end
-        for i in 1:$n-1
-            mem_edge!(s, nds[i], "then", nds[i+1])
-        end
-    end
-    return b
-end
-
-function bench_text_search(n::Int)
-    store, _ = build_test_graph(n)
-    # Search for a term that exists near the middle
-    query = "node_$(n ÷ 2)"
-    b = @benchmark mem_search_text($store, $query)
-    return b
-end
-
-function bench_node_lookup(n::Int)
-    store, nodes = build_test_graph(n)
-    # Look up a node in the middle
-    target = nodes[n ÷ 2].nptr
-    b = @benchmark mem_get_node($store, $target)
-    return b
-end
-
-function bench_graph_traversal(n::Int)
-    store, nodes = build_test_graph(n)
-    # Build adjacency from the in-memory store and find sources/sinks
-    adj = AdjacencyMatrix()
-    for (nptr, node) in store.nodes
-        for stidx in 1:ST_TOP
-            for lnk in node.incidence[stidx]
-                SemanticSpacetime.add_edge!(adj, nptr, lnk.dst, Float64(lnk.wgt))
+    return with_registry_state(reset=true) do
+        setup_arrows!()
+        @benchmark begin
+            store = MemoryStore()
+            for i in 1:$n
+                mem_vertex!(store, "bench_node_$i", "bench_ch")
             end
         end
     end
-    b = @benchmark begin
-        find_sources($adj)
-        find_sinks($adj)
+end
+
+function bench_edge_creation(n::Int)
+    return with_registry_state(reset=true) do
+        setup_arrows!()
+        @benchmark begin
+            s = MemoryStore()
+            nds = Node[]
+            for i in 1:$n
+                push!(nds, mem_vertex!(s, "edge_node_$i", "bench_ch"))
+            end
+            for i in 1:$n-1
+                mem_edge!(s, nds[i], "then", nds[i+1])
+            end
+        end
     end
-    return b
+end
+
+function bench_text_search(n::Int)
+    return with_registry_state(reset=true) do
+        store, _ = build_test_graph(n)
+        query = "node_$(n ÷ 2)"
+        @benchmark mem_search_text($store, $query)
+    end
+end
+
+function bench_node_lookup(n::Int)
+    return with_registry_state(reset=true) do
+        store, nodes = build_test_graph(n)
+        target = nodes[n ÷ 2].nptr
+        @benchmark mem_get_node($store, $target)
+    end
+end
+
+function bench_graph_traversal(n::Int)
+    return with_registry_state(reset=true) do
+        store, _ = build_test_graph(n)
+        adj = AdjacencyMatrix()
+        for (nptr, node) in store.nodes
+            for stidx in 1:ST_TOP
+                for lnk in node.incidence[stidx]
+                    SemanticSpacetime.add_edge!(adj, nptr, lnk.dst, Float64(lnk.wgt))
+                end
+            end
+        end
+        @benchmark begin
+            find_sources($adj)
+            find_sinks($adj)
+        end
+    end
 end
 
 # ─── Benchmark Definitions ───────────────────────────────────────────────
@@ -221,9 +219,11 @@ function main()
     # ── Julia benchmarks ──
     if run_julia
         println("  Warming up Julia...")
-        setup_arrows!()
-        s = MemoryStore()
-        mem_vertex!(s, "warmup", "w")
+        with_registry_state(reset=true) do
+            setup_arrows!()
+            s = MemoryStore()
+            mem_vertex!(s, "warmup", "w")
+        end
         println("  Warm-up done.")
         println()
 

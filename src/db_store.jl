@@ -459,12 +459,27 @@ mem_vertex!(store::DBStore, name::AbstractString, chap::AbstractString) = db_ver
 mem_get_node(store::DBStore, nptr::NodePtr) = db_get_node(store, nptr)
 mem_get_links(store::DBStore, nptr::NodePtr) = db_get_links(store, nptr)
 mem_get_nodes_by_name(store::DBStore, name::AbstractString) = db_get_nodes_by_name(store, name)
+mem_get_chapters(store::DBStore) = db_get_chapters(store)
 
 function mem_edge!(store::DBStore, from::Node, arrow::AbstractString,
                    to::Node, context::Vector{String}=String[],
                    weight::Float32=1.0f0)
     db_edge!(store, from, arrow, to; context=context, weight=weight)
 end
+
+function mem_search_text(store::DBStore, pattern::AbstractString;
+                         chapter::String="", limit::Int=100)
+    ptrs = db_search_nodes(store, pattern; chapter=chapter, limit=limit)
+    results = Node[]
+    for nptr in ptrs
+        node = db_get_node(store, nptr)
+        isempty(node.s) || push!(results, node)
+    end
+    return results
+end
+
+node_count(store::DBStore) = db_stats(store)["nodes"]
+link_count(store::DBStore) = db_stats(store)["links"]
 
 # ──────────────────────────────────────────────────────────────────
 # Cone search support for DBStore

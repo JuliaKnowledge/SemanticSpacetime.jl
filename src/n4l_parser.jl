@@ -1473,6 +1473,27 @@ function read_config_files(config_dir::String)
 end
 
 """
+    load_config!(config_dir::String; reset::Bool=true, st::N4LState=N4LState()) -> N4LState
+
+Load an SSTconfig directory into the module-level arrow and context registries.
+When `reset=true`, the current registry state is cleared first and the mandatory
+arrows are re-registered before the config files are parsed.
+"""
+function load_config!(config_dir::String; reset::Bool=true, st::N4LState=N4LState())
+    if reset
+        reset_arrows!()
+        reset_contexts!()
+        add_mandatory_arrows!()
+    end
+
+    for cf in read_config_files(config_dir)
+        parse_config_file(cf; st=st)
+    end
+
+    return st
+end
+
+"""
     read_file_as_chars(filename::String) -> Vector{Char}
 
 Read a UTF-8 file and return as a vector of Chars, normalizing
@@ -1624,30 +1645,27 @@ Parse N4L text and return the result. This is the main entry point.
 - `input`: N4L source text
 - `verbose`: print diagnostic output
 - `config_dir`: path to SSTconfig directory (auto-detected if not given)
-- `load_config`: whether to load SSTconfig arrow definitions
+ - `load_config`: whether to load SSTconfig arrow definitions. When `false`,
+   the current arrow/context registry is preserved if already initialized.
 """
 function parse_n4l(input::String; verbose::Bool=false, config_dir::Union{String, Nothing}=nothing, load_config::Bool=true)
-    reset_arrows!()
-    reset_contexts!()
-
     st = N4LState(verbose=verbose)
-    add_mandatory_arrows!()
 
     if load_config
         cdir = config_dir !== nothing ? config_dir : find_config_dir()
         if cdir !== nothing
-            config_files = read_config_files(cdir)
-            for cf in config_files
-                st.configuring = true
-                st.current_file = cf
-                st.line_item_state = ROLE_BLANK_LINE
-                st.line_num = 1
-                st.section_state = ""
-                src = read_file_as_chars(cf)
-                parse_config!(st, src)
-            end
-            st.configuring = false
+            load_config!(cdir; st=st)
+        else
+            reset_arrows!()
+            reset_contexts!()
+            add_mandatory_arrows!()
         end
+    else
+        if isempty(_ARROW_DIRECTORY)
+            reset_arrows!()
+            add_mandatory_arrows!()
+        end
+        isempty(_CONTEXT_DIRECTORY) && reset_contexts!()
     end
 
     new_file!(st, "<string>")

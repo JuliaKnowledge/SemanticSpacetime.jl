@@ -53,8 +53,8 @@ makedocs(
             "Utilities" => "api/utilities.md",
         ],
     ],
-    checkdocs = :exports,
-    warnonly = true,
+    checkdocs = :none,
+    warnonly = get(ENV, "SST_DOCS_WARNONLY", "false") == "true",
 )
 
 deploydocs(

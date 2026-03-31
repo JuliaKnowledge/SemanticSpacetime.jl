@@ -67,6 +67,8 @@ eachlink
 find_nodes
 map_nodes
 with_store
+with_registry_state
+load_config!
 with_config
 ```
 

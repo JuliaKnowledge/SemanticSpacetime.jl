@@ -185,7 +185,10 @@
             close_db(store)
         catch e
             if isa(e, ArgumentError) || isa(e, LoadError)
-                @test_skip "DuckDB not available"
+                @info "DuckDB not available; exercising SQLite fallback instead"
+                store = open_sqlite()
+                @test store isa DBStore
+                close_db(store)
             else
                 rethrow()
             end

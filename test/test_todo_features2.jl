@@ -5,20 +5,9 @@ using DBInterface
 # Arrow/context setup
 # ──────────────────────────────────────────────────────────────────
 
-config_dir = let d = joinpath(@__DIR__, "..", "..", "SSTorytime", "SSTconfig")
-    isdir(d) ? d : nothing
-end
-
 SemanticSpacetime.reset_arrows!()
 SemanticSpacetime.reset_contexts!()
-add_mandatory_arrows!()
-
-if config_dir !== nothing
-    st = SemanticSpacetime.N4LState()
-    for cf in read_config_files(config_dir)
-        SemanticSpacetime.parse_config_file(cf; st=st)
-    end
-end
+load_test_config!()
 
 # Register arrows needed by tests if not already present
 if get_arrow_by_name("then") === nothing
