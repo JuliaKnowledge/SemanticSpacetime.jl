@@ -25,11 +25,19 @@ import Sockets
     mem_edge!(store, n2, "then", n3)
     mem_edge!(store, n1, "has", n3)
 
+    upload_page_map_event!(store, PageMap("chapter1", "", 0, 1,
+        [Link(0, 1.0f0, 0, n1.nptr)]))
+
+    resources_root = mktempdir()
+    local_asset = joinpath(resources_root, "alice-note.txt")
+    write(local_asset, "Alice asset")
+    attach_asset!(local_asset, "Alice", "chapter1"; root=resources_root)
+
     # Pick a port in the ephemeral range
     port = 18700 + (getpid() % 100)
     base = "http://127.0.0.1:$port"
 
-    server = serve(store; port=port, verbose=false)
+    server = serve(store; port=port, verbose=false, resources=resources_root)
     sleep(2)
 
     try
@@ -182,11 +190,66 @@ import Sockets
         end
 
         @testset "api/pagemap endpoint" begin
-            resp = HTTP.get("$base/api/pagemap")
+            resp = HTTP.get("$base/api/pagemap?chapter=chapter1&page=1")
             @test resp.status == 200
             body = JSON3.read(String(resp.body))
             @test haskey(body, "title")
             @test haskey(body, "notes")
+            @test length(body["notes"]) == 1
+            @test length(body["notes"][1][1]["assets"]) == 1
+        end
+
+        @testset "api/assets endpoints" begin
+            resp = HTTP.get("$base/api/assets?name=Alice&chapter=chapter1")
+            @test resp.status == 200
+            body = JSON3.read(String(resp.body))
+            @test length(body["assets"]) == 1
+
+            asset_url = String(body["assets"][1])
+            resp2 = HTTP.get("$base$asset_url")
+            @test resp2.status == 200
+            @test String(resp2.body) == "Alice asset"
+        end
+
+        @testset "api/assets upload endpoint" begin
+            upload_body = HTTP.Form(Dict(
+                "name" => "Alice",
+                "chapter" => "chapter1",
+                "context" => "",
+                "file" => HTTP.Multipart("browser-upload.txt",
+                    IOBuffer("Uploaded through multipart"), "text/plain"),
+            ))
+            resp = HTTP.post("$base/api/assets/upload",
+                [HTTP.Forms.content_type(upload_body)], upload_body)
+            @test resp.status == 200
+            body = JSON3.read(String(resp.body))
+            @test body["status"] == "attached"
+            @test body["asset"] == "browser_upload.txt"
+            @test length(body["assets"]) == 2
+
+            upload_url = findfirst(url -> occursin("browser_upload.txt", String(url)),
+                body["assets"])
+            @test !isnothing(upload_url)
+            resp2 = HTTP.get("$base$(body["assets"][upload_url])")
+            @test resp2.status == 200
+            @test String(resp2.body) == "Uploaded through multipart"
+        end
+
+        @testset "api/assets uri endpoint" begin
+            uri_source = joinpath(resources_root, "alice-uri.txt")
+            write(uri_source, "Attached from URI")
+            uri_body = HTTP.Form(Dict(
+                "uri" => "file://$(uri_source)",
+                "name" => "Alice",
+                "chapter" => "chapter1",
+                "context" => "",
+            ))
+            resp = HTTP.post("$base/api/assets/uri",
+                [HTTP.Forms.content_type(uri_body)], uri_body)
+            @test resp.status == 200
+            body = JSON3.read(String(resp.body))
+            @test body["status"] == "attached"
+            @test length(body["assets"]) == 3
         end
 
         @testset "api/stories endpoint" begin
@@ -249,6 +312,7 @@ import Sockets
     finally
         stop_server()
         sleep(1)
+        rm(resources_root; recursive=true, force=true)
     end
 
     # Clean up global state

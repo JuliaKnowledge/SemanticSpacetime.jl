@@ -3,6 +3,11 @@
 ## Tools
 
 ```@docs
+sanitize_asset_path
+asset_cache_location
+list_cached_assets
+attach_asset!
+attach_asset_from_uri!
 remove_chapter!
 browse_notes
 import_json!

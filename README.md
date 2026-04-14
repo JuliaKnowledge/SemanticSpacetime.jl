@@ -71,6 +71,7 @@ store = open_sqlite()               # in-memory SQLite (or open_duckdb())
 | Search and path solving | ✅ | `search.jl`, `pathsolve.jl`, `cone_search.jl`, `weighted_search.jl` |
 | Web interface / HTTP server | ✅ | `http_server.jl`, `web_types.jl` (`Genie.jl`) |
 | Visualization (CairoMakie plots, GraphViz DOT export) | ✅ | `visualization.jl` (`CairoMakie` for plots) |
+| Asset attachments / note cache / browser upload | ✅ | `assets.jl`, `http_server.jl`, `web_types.jl` |
 
 ## The SST Type System
 
@@ -168,6 +169,7 @@ The following vignettes provide worked examples and in-depth guides. Each is ava
 | 14 | [Maze Solving](vignettes/14-maze-solving/14-maze-solving.md) | Encoding and solving mazes with graph traversal |
 | 15 | [Epidemiology](vignettes/15-epidemiology/15-epidemiology.md) | Disease transmission modelling with SST |
 | 16 | [Ecological Causal Inference](vignettes/16-ecological-causal-inference/16-ecological-causal-inference.md) | Causal inference in ecological systems |
+| 17 | [Reminders and Attached Assets](vignettes/17-reminders-and-assets/17-reminders-and-assets.md) | Dynamic reminder strings plus SSTorytime-style note asset attachments |
 
 ## Dependencies
 

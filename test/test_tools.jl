@@ -68,4 +68,42 @@
         result = SemanticSpacetime.browse_notes(sst, "test_chapter")
         @test result == ""
     end
+
+    @testset "asset cache helpers" begin
+        mktempdir() do root
+            source = joinpath(root, "meeting-note.txt")
+            write(source, "Remember to bring notebooks.")
+
+            cached = attach_asset!(source, "Regular coordination meeting", "reminders";
+                                   context="Monday, Hr10", root=root)
+            @test isfile(cached)
+            @test occursin(joinpath(root, "cacheroot"), cached)
+            @test sanitize_asset_path("Monday, Hr10") == "Monday_Hr10"
+
+            listed = list_cached_assets("Regular coordination meeting", "reminders";
+                                        context="Monday, Hr10", root=root)
+            @test listed == [cached]
+
+            cached_upload = attach_asset!(Vector{UInt8}("Uploaded from browser"),
+                "browser upload.txt", "Regular coordination meeting", "reminders";
+                context="Monday, Hr10", root=root)
+            @test isfile(cached_upload)
+            @test read(cached_upload, String) == "Uploaded from browser"
+
+            uri_source = joinpath(root, "remote-asset.txt")
+            write(uri_source, "Attached via URI.")
+            cached_uri = attach_asset_from_uri!("file://$(uri_source)",
+                "Regular coordination meeting", "reminders";
+                context="Monday, Hr10", root=root, filename="remote.txt")
+            @test isfile(cached_uri)
+
+            listed2 = list_cached_assets("Regular coordination meeting", "reminders";
+                                         context="Monday, Hr10", root=root)
+            @test length(listed2) == 3
+
+            cache_dir = asset_cache_location("Regular coordination meeting", "reminders";
+                                             context="Monday, Hr10", root=root)
+            @test dirname(cached) == cache_dir
+        end
+    end
 end

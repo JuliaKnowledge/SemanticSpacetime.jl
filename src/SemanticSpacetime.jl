@@ -100,6 +100,9 @@ include("time_semantics.jl")
 # Built-in dynamic function evaluation
 include("builtins.jl")
 
+# Asset attachment helpers
+include("assets.jl")
+
 # Arrow closure composition
 include("arrow_closures.jl")
 
@@ -323,6 +326,10 @@ export
     reset_session_tracking!,
     update_last_saw_section!, update_last_saw_nptr!,
     get_last_saw_section, get_last_saw_nptr, get_newly_seen_nptrs,
+
+    # Asset attachments
+    sanitize_asset_path, asset_cache_location, list_cached_assets,
+    attach_asset!, attach_asset_from_uri!,
 
     # Tools
     remove_chapter!, browse_notes, import_json!,

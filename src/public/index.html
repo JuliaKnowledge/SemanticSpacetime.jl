@@ -247,6 +247,18 @@ function renderNodeDetail(node, linksData) {
 
     <div class="orbit-container"><canvas id="orbitCanvas"></canvas></div>
 
+    <div class="asset-section">
+      <div class="asset-toolbar">
+        <h4>Attached Assets</h4>
+        <button id="assetFileButton" class="asset-button" type="button">Upload file</button>
+        <button id="assetUriButton" class="asset-button" type="button">Attach URI</button>
+      </div>
+      <input id="assetFileInput" type="file" hidden>
+      <div id="assetGallery" class="asset-gallery">
+        <div class="asset-empty">Loading assets…</div>
+      </div>
+    </div>
+
     <div class="links-section">
       ${renderLinkGroup('↝ Leads to', 'leadsto', grouped.leadsto)}
       ${renderLinkGroup('⊃ Contains', 'contains', grouped.contains)}
@@ -254,6 +266,18 @@ function renderNodeDetail(node, linksData) {
       ${renderLinkGroup('≈ Near', 'near', grouped.near)}
     </div>
   `;
+
+  const assetUriButton = document.getElementById('assetUriButton');
+  const assetFileButton = document.getElementById('assetFileButton');
+  const assetFileInput = document.getElementById('assetFileInput');
+  if (assetFileButton && assetFileInput) {
+    assetFileButton.onclick = () => assetFileInput.click();
+    assetFileInput.onchange = () => uploadAssetFile(assetFileInput, text, chap);
+  }
+  if (assetUriButton) {
+    assetUriButton.onclick = () => promptAttachAsset(text, chap);
+  }
+  loadAssets(text, chap);
 }
 
 function renderLinkGroup(title, cssClass, links) {
@@ -358,6 +382,93 @@ function drawOrbit(data) {
       ctx.fillText(label, x, y + 18);
     });
   });
+}
+
+async function loadAssets(text, chap, ctx = '') {
+  const gallery = document.getElementById('assetGallery');
+  if (!gallery) return;
+
+  try {
+    const data = await api('/api/assets?name=' + encodeURIComponent(text) +
+      '&chapter=' + encodeURIComponent(chap) +
+      '&context=' + encodeURIComponent(ctx));
+    renderAssets(gallery, data.assets || []);
+  } catch (e) {
+    gallery.innerHTML = '<div class="asset-empty">Assets unavailable</div>';
+  }
+}
+
+function renderAssets(gallery, assets) {
+  if (!Array.isArray(assets) || assets.length === 0) {
+    gallery.innerHTML = '<div class="asset-empty">No assets attached</div>';
+    return;
+  }
+
+  gallery.innerHTML = assets.map(asset => {
+    const lower = asset.toLowerCase();
+    if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') ||
+        lower.endsWith('.gif') || lower.endsWith('.webp') || lower.endsWith('.svg')) {
+      return `<a class="asset-card" href="${esc(asset)}" target="_blank" rel="noopener">
+        <img src="${esc(asset)}" alt="Attached asset">
+      </a>`;
+    }
+
+    return `<a class="asset-card asset-file" href="${esc(asset)}" target="_blank" rel="noopener">
+      <span>${esc(asset.split('&file=').pop() || asset)}</span>
+    </a>`;
+  }).join('');
+}
+
+async function promptAttachAsset(text, chap, ctx = '') {
+  const uri = window.prompt('Attach asset URI', 'https://example.com/picture.jpg');
+  if (!uri) return;
+
+  const form = new FormData();
+  form.set('uri', uri);
+  form.set('name', text);
+  form.set('chapter', chap);
+  form.set('context', ctx);
+
+  const gallery = document.getElementById('assetGallery');
+  if (gallery) gallery.innerHTML = '<div class="asset-empty">Attaching asset…</div>';
+
+  try {
+    const response = await fetch('/api/assets/uri', { method: 'POST', body: form });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Attach failed');
+    }
+    renderAssets(gallery, data.assets || []);
+  } catch (e) {
+    if (gallery) gallery.innerHTML = `<div class="asset-empty">Attach failed: ${esc(e.message || 'unknown error')}</div>`;
+  }
+}
+
+async function uploadAssetFile(input, text, chap, ctx = '') {
+  const file = input && input.files ? input.files[0] : null;
+  if (!file) return;
+
+  const form = new FormData();
+  form.set('file', file);
+  form.set('name', text);
+  form.set('chapter', chap);
+  form.set('context', ctx);
+
+  const gallery = document.getElementById('assetGallery');
+  if (gallery) gallery.innerHTML = '<div class="asset-empty">Uploading asset…</div>';
+
+  try {
+    const response = await fetch('/api/assets/upload', { method: 'POST', body: form });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Upload failed');
+    }
+    renderAssets(gallery, data.assets || []);
+  } catch (e) {
+    if (gallery) gallery.innerHTML = `<div class="asset-empty">Upload failed: ${esc(e.message || 'unknown error')}</div>`;
+  } finally {
+    input.value = '';
+  }
 }
 
 // ─── Utilities ────────────────────────────────────────

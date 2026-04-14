@@ -148,8 +148,39 @@ function _guess_content_type(path::String)
     ext == ".js"   && return "application/javascript"
     ext == ".json" && return "application/json"
     ext == ".png"  && return "image/png"
+    ext == ".jpg"  && return "image/jpeg"
+    ext == ".jpeg" && return "image/jpeg"
+    ext == ".gif"  && return "image/gif"
+    ext == ".webp" && return "image/webp"
     ext == ".svg"  && return "image/svg+xml"
+    ext == ".txt"  && return "text/plain"
+    ext == ".md"   && return "text/markdown"
+    ext == ".pdf"  && return "application/pdf"
+    ext == ".json" && return "application/json"
     return "application/octet-stream"
+end
+
+function _parse_context_query(raw)::Vector{String}
+    text = strip(String(raw))
+    isempty(text) && return String[]
+    return [part for part in strip.(split(text, ',')) if !isempty(part)]
+end
+
+function _request_value(key::Symbol, default="")
+    payload = postpayload()
+    if haskey(payload, key)
+        value = payload[key]
+        return value isa AbstractVector ? (isempty(value) ? default : first(value)) : value
+    end
+    return getpayload(key, default)
+end
+
+function _asset_file_response(path::AbstractString)
+    return HTTP.Response(200,
+        ["Content-Type" => _guess_content_type(String(path)),
+         "Cache-Control" => "no-cache",
+         "Access-Control-Allow-Origin" => "*"],
+        body=read(path))
 end
 
 # ──────────────────────────────────────────────────────────────────
@@ -547,14 +578,95 @@ function register_routes!()
         _genie_json(_graph_report(srv.store))
     end
 
-    # GET /api/pagemap?chapter=X&page=1
+    # GET /api/assets?name=X&chapter=Y&context=Z
+    route("/api/assets") do
+        srv = SERVER_STATE[]
+        isnothing(srv) && return _genie_error("Server not initialized"; status=500)
+        name = getpayload(:name, "")
+        chapter = getpayload(:chapter, "")
+        context = getpayload(:context, "")
+        isempty(name) && return _genie_error("Missing asset parameter 'name'")
+        isempty(chapter) && return _genie_error("Missing asset parameter 'chapter'")
+        assets = cached_asset_urls(name, chapter;
+            context=context, root=srv.resources_dir)
+        _genie_json(Dict(
+            "name" => name,
+            "chapter" => chapter,
+            "context" => context,
+            "assets" => assets,
+        ))
+    end
+
+    route("/api/assets/file") do
+        srv = SERVER_STATE[]
+        isnothing(srv) && return _genie_error("Server not initialized"; status=500)
+        name = getpayload(:name, "")
+        chapter = getpayload(:chapter, "")
+        context = getpayload(:context, "")
+        file = getpayload(:file, "")
+        isempty(name) && return _genie_error("Missing asset parameter 'name'")
+        isempty(chapter) && return _genie_error("Missing asset parameter 'chapter'")
+        isempty(file) && return _genie_error("Missing asset parameter 'file'")
+        path = cached_asset_path(name, chapter, file;
+            context=context, root=srv.resources_dir)
+        isnothing(path) && return _genie_error("Asset not found"; status=404)
+        _asset_file_response(path)
+    end
+
+    route("/api/assets/uri", method=POST) do
+        srv = SERVER_STATE[]
+        isnothing(srv) && return _genie_error("Server not initialized"; status=500)
+        uri = _request_value(:uri, "")
+        name = _request_value(:name, "")
+        chapter = _request_value(:chapter, "")
+        context = _request_value(:context, "")
+        isempty(uri) && return _genie_error("Missing asset parameter 'uri'")
+        isempty(name) && return _genie_error("Missing asset parameter 'name'")
+        isempty(chapter) && return _genie_error("Missing asset parameter 'chapter'")
+        cached = attach_asset_from_uri!(uri, name, chapter;
+            context=context, root=srv.resources_dir)
+        _genie_json(Dict(
+            "status" => "attached",
+            "asset" => basename(cached),
+            "assets" => cached_asset_urls(name, chapter;
+                context=context, root=srv.resources_dir),
+        ))
+    end
+
+    route("/api/assets/upload", method=POST) do
+        srv = SERVER_STATE[]
+        isnothing(srv) && return _genie_error("Server not initialized"; status=500)
+        name = _request_value(:name, "")
+        chapter = _request_value(:chapter, "")
+        context = _request_value(:context, "")
+        isempty(name) && return _genie_error("Missing asset parameter 'name'")
+        isempty(chapter) && return _genie_error("Missing asset parameter 'chapter'")
+        infilespayload(:file) || return _genie_error("Missing uploaded asset file")
+
+        upload = filespayload(:file)
+        isempty(upload.name) && return _genie_error("Uploaded asset is missing a filename")
+
+        cached = attach_asset!(upload.data, upload.name, name, chapter;
+            context=context, root=srv.resources_dir)
+        _genie_json(Dict(
+            "status" => "attached",
+            "asset" => basename(cached),
+            "mime" => upload.mime,
+            "assets" => cached_asset_urls(name, chapter;
+                context=context, root=srv.resources_dir),
+        ))
+    end
+
+    # GET /api/pagemap?chapter=X&page=1&context=...
     route("/api/pagemap") do
         srv = SERVER_STATE[]
         isnothing(srv) && return _genie_error("Server not initialized"; status=500)
         store = srv.store
         chapter = getpayload(:chapter, "")
-        maplines = get_page_map(store; chapter=chapter)
-        _genie_json(json_page(store, maplines))
+        page = something(tryparse(Int, String(getpayload(:page, "0"))), 0)
+        context = _parse_context_query(getpayload(:context, ""))
+        maplines = get_page_map(store; chapter=chapter, context=context, page=page)
+        _genie_json(json_page(store, maplines; assets_root=srv.resources_dir))
     end
 
     # GET /api/stories?name=X
@@ -627,6 +739,10 @@ Start a Genie-based HTTP server exposing the SST graph via a JSON API.
 - `GET /api/stats` — graph statistics
 - `GET /api/pagemap?chapter=X` — page-map view
 - `GET /api/stories?name=X` — story/sequence following
+- `GET /api/assets?name=X&chapter=Y` — cached note assets
+- `GET /api/assets/file?...` — stream a cached asset
+- `POST /api/assets/uri` — attach a remote or file URI to a note
+- `POST /api/assets/upload` — attach a browser-uploaded file to a note
 
 # Arguments
 - `store`: any `AbstractSSTStore` (MemoryStore or SSTConnection)
@@ -648,6 +764,7 @@ stop_server()
 """
 function serve(store::AbstractSSTStore; port::Int=8080, host::String="127.0.0.1",
                verbose::Bool=true, resources::String="/tmp")
+    mkpath(joinpath(resources, "cacheroot"))
     SERVER_STATE[] = SSTServer(store, verbose, resources)
 
     Genie.config.run_as_server = true

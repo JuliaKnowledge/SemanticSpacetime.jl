@@ -68,12 +68,14 @@ function coords_to_dict(c::Coords)
 end
 
 """
-    webpath_to_dict(wp::WebPath) -> Dict
+    webpath_to_dict(wp::WebPath; assets_root=nothing, asset_base="/api/assets/file") -> Dict
 
 Convert a WebPath struct to a JSON-serializable dictionary.
 """
-function webpath_to_dict(wp::WebPath)
-    Dict{String,Any}(
+function webpath_to_dict(wp::WebPath;
+                         assets_root::Union{Nothing,AbstractString}=nothing,
+                         asset_base::AbstractString="/api/assets/file")
+    dict = Dict{String,Any}(
         "name"    => wp.name,
         "nptr"    => Dict("class" => wp.nptr.class, "cptr" => wp.nptr.cptr),
         "arr"     => wp.arr,
@@ -83,6 +85,11 @@ function webpath_to_dict(wp::WebPath)
         "ctx"     => wp.ctx,
         "xyz"     => coords_to_dict(wp.xyz),
     )
+    if assets_root !== nothing && !isempty(wp.name) && !isempty(wp.chp)
+        dict["assets"] = cached_asset_urls(wp.name, wp.chp;
+            context=wp.ctx, root=assets_root, base_url=asset_base)
+    end
+    return dict
 end
 
 """
@@ -182,11 +189,14 @@ function link_web_paths(store::AbstractSSTStore, cone::Vector{Vector{Link}};
 end
 
 """
-    json_page(store::MemoryStore, maplines::Vector{PageMap}) -> Dict
+    json_page(store::MemoryStore, maplines::Vector{PageMap};
+              assets_root=nothing, asset_base="/api/assets/file") -> Dict
 
 Build a PageView-like dictionary from page map lines for JSON rendering.
 """
-function json_page(store::AbstractSSTStore, maplines::Vector{PageMap})
+function json_page(store::AbstractSSTStore, maplines::Vector{PageMap};
+                   assets_root::Union{Nothing,AbstractString}=nothing,
+                   asset_base::AbstractString="/api/assets/file")
     title = isempty(maplines) ? "" : maplines[1].chapter
     ctx_str = ""
     notes = Vector{WebPath}[]
@@ -216,7 +226,8 @@ function json_page(store::AbstractSSTStore, maplines::Vector{PageMap})
     return Dict{String,Any}(
         "title"   => title,
         "context" => ctx_str,
-        "notes"   => [[webpath_to_dict(wp) for wp in line] for line in notes],
+        "notes"   => [[webpath_to_dict(wp; assets_root=assets_root, asset_base=asset_base)
+                       for wp in line] for line in notes],
     )
 end
 

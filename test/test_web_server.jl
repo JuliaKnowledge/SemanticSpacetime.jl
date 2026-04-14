@@ -67,6 +67,19 @@ import JSON3
         @test isempty(result["notes"])
     end
 
+    @testset "json_page with attached assets" begin
+        mktempdir() do root
+            source = joinpath(root, "alpha-note.txt")
+            write(source, "Alpha note asset")
+            attach_asset!(source, "Alpha", "ch1"; root=root)
+
+            pm = PageMap("ch1", "", 0, 1, [Link(0, 1.0f0, 0, n1.nptr)])
+            result = json_page(store, [pm]; assets_root=root)
+            @test length(result["notes"]) == 1
+            @test length(result["notes"][1][1]["assets"]) == 1
+        end
+    end
+
     @testset "WebConePaths construction" begin
         wcp = WebConePaths(n1.nptr, 0, Vector{WebPath}[])
         @test wcp.origin == n1.nptr
