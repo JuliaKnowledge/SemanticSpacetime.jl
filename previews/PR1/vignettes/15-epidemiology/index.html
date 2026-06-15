@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Epidemiology · SemanticSpacetime.jl</title><meta name="title" content="Epidemiology · SemanticSpacetime.jl"/><meta property="og:title" content="Epidemiology · SemanticSpacetime.jl"/><meta property="twitter:title" content="Epidemiology · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/15-epidemiology/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/15-epidemiology/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/15-epidemiology/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li class="is-active"><a class="tocitem" href>Epidemiology</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#1.-Building-the-Outbreak-Ontology-in-SST"><span>1. Building the Outbreak Ontology in SST</span></a></li><li><a class="tocitem" href="#2.-Surveillance-Data-—-Case-Reports"><span>2. Surveillance Data — Case Reports</span></a></li><li><a class="tocitem" href="#3.-Contact-Tracing-and-Transmission-Events"><span>3. Contact Tracing and Transmission Events</span></a></li><li><a class="tocitem" href="#4.-Outbreak-Definitions"><span>4. Outbreak Definitions</span></a></li><li><a class="tocitem" href="#5.-Epidemiological-Queries-—-SST-Graph-Traversal"><span>5. Epidemiological Queries — SST Graph Traversal</span></a></li><li><a class="tocitem" href="#6.-Contact-Tracing-—-Forward-Cones-and-Path-Finding"><span>6. Contact Tracing — Forward Cones and Path Finding</span></a></li><li><a class="tocitem" href="#7.-Network-Analysis-—-Identifying-Super-Spreaders"><span>7. Network Analysis — Identifying Super-Spreaders</span></a></li><li><a class="tocitem" href="#8.-Risk-Inference-—-SST-Contextual-Analysis"><span>8. Risk Inference — SST Contextual Analysis</span></a></li><li><a class="tocitem" href="#9.-Weighted-Search-—-Risk-Propagation"><span>9. Weighted Search — Risk Propagation</span></a></li><li><a class="tocitem" href="#10.-Text-Search-—-Syndromic-Surveillance"><span>10. Text Search — Syndromic Surveillance</span></a></li><li><a class="tocitem" href="#11.-Epidemic-Curve"><span>11. Epidemic Curve</span></a></li><li><a class="tocitem" href="#12.-Location–Pathogen-Heatmap"><span>12. Location–Pathogen Heatmap</span></a></li><li><a class="tocitem" href="#13.-Chapter-Distribution"><span>13. Chapter Distribution</span></a></li><li><a class="tocitem" href="#14.-Graph-Statistics"><span>14. Graph Statistics</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li><li><a class="tocitem" href="../17-reminders-and-assets/">Reminders And Assets</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Epidemiology</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Epidemiology</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Epidemiology-Knowledge-Graph"><a class="docs-heading-anchor" href="#Epidemiology-Knowledge-Graph">Epidemiology Knowledge Graph</a><a id="Epidemiology-Knowledge-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Epidemiology-Knowledge-Graph" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>Epidemiology requires integrating heterogeneous data — pathogens, hosts, clinical observations, geographic surveillance, intervention records, and contact tracing data — into a coherent knowledge model. <strong>Semantic Spacetime</strong> is well-suited for this: its typed arrow system naturally expresses causal chains (LEADSTO), containment hierarchies (CONTAINS), property annotations (EXPRESS), and similarity relationships (NEAR) across domains — without requiring a separate ontology language.</p><p>This vignette builds a <strong>comprehensive infectious disease knowledge graph</strong> for a fictitious multi-pathogen respiratory outbreak scenario, and demonstrates SemanticSpacetime.jl’s capabilities:</p><ol><li><strong>N4L knowledge encoding</strong> — pathogens, hosts, clinical features,  contacts</li><li><strong>Typed arrow semantics</strong> — SST’s spacetime types map naturally to  epidemiology</li><li><strong>Graph traversal</strong> — contact tracing via forward/backward cones</li><li><strong>Path finding</strong> — transmission chain reconstruction</li><li><strong>Centrality &amp; orbit analysis</strong> — identifying super-spreader nodes</li><li><strong>Weighted search</strong> — risk propagation through the contact network</li><li><strong>Context intelligence</strong> — inferring outbreak clusters</li><li><strong>Text search</strong> — syndromic surveillance queries</li><li><strong>Visualization</strong> — outbreak network analysis</li></ol><p>The scenario models an outbreak involving three pathogens (an influenza variant, a novel coronavirus, and an RSV strain) circulating simultaneously across hospital wards and community settings, reflecting the challenges of real-world syndromic surveillance.</p><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+add_mandatory_arrows!()
+
+config_dir = let d = joinpath(@__DIR__, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;SSTorytime&quot;, &quot;SSTconfig&quot;)
+    isdir(d) ? d : nothing
+end
+if config_dir !== nothing
+    st = SemanticSpacetime.N4LState()
+    for cf in read_config_files(config_dir)
+        SemanticSpacetime.parse_config_file(cf; st=st)
+    end
+end
+
+store = MemoryStore()
+println(&quot;SemanticSpacetime.jl epidemiology vignette&quot;)
+println(&quot;Arrows loaded: config_dir=$(config_dir !== nothing ? &quot;yes&quot; : &quot;no&quot;)&quot;)</code></pre><pre><code class="nohighlight hljs">SemanticSpacetime.jl epidemiology vignette
+Arrows loaded: config_dir=yes</code></pre><h2 id="1.-Building-the-Outbreak-Ontology-in-SST"><a class="docs-heading-anchor" href="#1.-Building-the-Outbreak-Ontology-in-SST">1. Building the Outbreak Ontology in SST</a><a id="1.-Building-the-Outbreak-Ontology-in-SST-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Building-the-Outbreak-Ontology-in-SST" title="Permalink"></a></h2><p>In SST, the ontology is implicit in the <strong>arrow types</strong> and <strong>chapters</strong> rather than declared via OWL. Each entity lives in a typed chapter, and relationships use SST’s spacetime arrow semantics:</p><table><tr><th style="text-align: right">RDF / OWL Concept</th><th style="text-align: right">SST Equivalent</th></tr><tr><td style="text-align: right"><code>rdf:type</code> / OWL Class</td><td style="text-align: right">Chapter membership</td></tr><tr><td style="text-align: right"><code>rdfs:subClassOf</code></td><td style="text-align: right">CONTAINS arrows (<code>(contain)</code>)</td></tr><tr><td style="text-align: right">Object properties (causal)</td><td style="text-align: right">LEADSTO arrows (<code>(leads to)</code>, <code>(then)</code>)</td></tr><tr><td style="text-align: right">Object properties (structural)</td><td style="text-align: right">CONTAINS arrows (<code>(has-pt)</code>, <code>(consist)</code>)</td></tr><tr><td style="text-align: right">Data properties</td><td style="text-align: right">EXPRESS arrows (<code>(note)</code>, <code>(data)</code>, <code>(name)</code>)</td></tr><tr><td style="text-align: right"><code>owl:sameAs</code> / similarity</td><td style="text-align: right">NEAR arrows (<code>(ll)</code>, <code>(syn)</code>)</td></tr></table><h3 id="1a.-Pathogens"><a class="docs-heading-anchor" href="#1a.-Pathogens">1a. Pathogens</a><a id="1a.-Pathogens-1"></a><a class="docs-heading-anchor-permalink" href="#1a.-Pathogens" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Create pathogen nodes in a &quot;pathogens&quot; chapter
+flu   = mem_vertex!(store, &quot;Influenza A H3N2&quot;,  &quot;pathogens&quot;)
+cov   = mem_vertex!(store, &quot;SARS-CoV-2 JN.1&quot;,  &quot;pathogens&quot;)
+rsv   = mem_vertex!(store, &quot;RSV subtype B&quot;,     &quot;pathogens&quot;)
+
+# Pathogen taxonomy — CONTAINS captures &quot;is a kind of&quot;
+virus = mem_vertex!(store, &quot;Virus&quot;,     &quot;pathogen taxonomy&quot;)
+resp  = mem_vertex!(store, &quot;Respiratory pathogen&quot;, &quot;pathogen taxonomy&quot;)
+
+for p in [flu, cov, rsv]
+    mem_edge!(store, virus, &quot;contain&quot;, p)
+    mem_edge!(store, resp, &quot;contain&quot;, p)
+end
+
+# Pathogen properties — EXPRESS arrows for metadata
+flu_r0  = mem_vertex!(store, &quot;R0 = 1.3&quot;,  &quot;pathogen properties&quot;)
+cov_r0  = mem_vertex!(store, &quot;R0 = 2.5&quot;,  &quot;pathogen properties&quot;)
+rsv_r0  = mem_vertex!(store, &quot;R0 = 3.0&quot;,  &quot;pathogen properties&quot;)
+mem_edge!(store, flu, &quot;note&quot;, flu_r0)
+mem_edge!(store, cov, &quot;note&quot;, cov_r0)
+mem_edge!(store, rsv, &quot;note&quot;, rsv_r0)
+
+# Pathogen families
+for (p, fam) in [(flu, &quot;Orthomyxoviridae&quot;), (cov, &quot;Coronaviridae&quot;), (rsv, &quot;Pneumoviridae&quot;)]
+    fam_node = mem_vertex!(store, fam, &quot;pathogen taxonomy&quot;)
+    mem_edge!(store, fam_node, &quot;contain&quot;, p)
+end
+
+println(&quot;Pathogens: $(length([flu, cov, rsv])) pathogens created&quot;)</code></pre><pre><code class="nohighlight hljs">Pathogens: 3 pathogens created</code></pre><h3 id="1b.-Locations"><a class="docs-heading-anchor" href="#1b.-Locations">1b. Locations</a><a id="1b.-Locations-1"></a><a class="docs-heading-anchor-permalink" href="#1b.-Locations" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Location hierarchy using CONTAINS
+locations = Dict{String, Any}()
+for (id, name, cls) in [
+    (&quot;royal_infirmary&quot;,  &quot;Royal Infirmary&quot;,        &quot;Hospital&quot;),
+    (&quot;general_hospital&quot;, &quot;General Hospital&quot;,        &quot;Hospital&quot;),
+    (&quot;care_home_A&quot;,      &quot;Sunrise Care Home&quot;,       &quot;Care Home&quot;),
+    (&quot;care_home_B&quot;,      &quot;Meadowbrook Care Home&quot;,   &quot;Care Home&quot;),
+    (&quot;primary_school&quot;,   &quot;Oakfield Primary School&quot;,  &quot;School&quot;),
+    (&quot;secondary_school&quot;, &quot;Riverside Academy&quot;,         &quot;School&quot;),
+]
+    loc = mem_vertex!(store, name, &quot;locations&quot;)
+    locations[id] = loc
+    # Type classification via containment
+    cls_node = mem_vertex!(store, cls, &quot;location types&quot;)
+    mem_edge!(store, cls_node, &quot;contain&quot;, loc)
+end
+
+println(&quot;Locations: $(length(locations)) created&quot;)</code></pre><pre><code class="nohighlight hljs">Locations: 6 created</code></pre><h3 id="1c.-Symptoms-and-Risk-Factors"><a class="docs-heading-anchor" href="#1c.-Symptoms-and-Risk-Factors">1c. Symptoms and Risk Factors</a><a id="1c.-Symptoms-and-Risk-Factors-1"></a><a class="docs-heading-anchor-permalink" href="#1c.-Symptoms-and-Risk-Factors" title="Permalink"></a></h3><pre><code class="language-julia hljs">symptom_nodes = Dict{String, Any}()
+for s in [&quot;fever&quot;, &quot;cough&quot;, &quot;dyspnoea&quot;, &quot;fatigue&quot;, &quot;myalgia&quot;,
+          &quot;sore throat&quot;, &quot;rhinorrhoea&quot;, &quot;headache&quot;, &quot;wheeze&quot;,
+          &quot;hypoxia&quot;, &quot;tachypnoea&quot;]
+    symptom_nodes[s] = mem_vertex!(store, s, &quot;symptoms&quot;)
+end
+
+risk_nodes = Dict{String, Any}()
+for rf in [&quot;age over 65&quot;, &quot;immunocompromised&quot;, &quot;chronic lung disease&quot;,
+           &quot;diabetes&quot;, &quot;cardiovascular disease&quot;, &quot;obesity&quot;,
+           &quot;pregnancy&quot;, &quot;healthcare worker&quot;]
+    risk_nodes[rf] = mem_vertex!(store, rf, &quot;risk factors&quot;)
+end
+
+println(&quot;$(length(symptom_nodes)) symptoms, $(length(risk_nodes)) risk factors&quot;)</code></pre><pre><code class="nohighlight hljs">11 symptoms, 8 risk factors</code></pre><h3 id="1d.-Patients-(25-patients-in-the-outbreak)"><a class="docs-heading-anchor" href="#1d.-Patients-(25-patients-in-the-outbreak)">1d. Patients (25 patients in the outbreak)</a><a id="1d.-Patients-(25-patients-in-the-outbreak)-1"></a><a class="docs-heading-anchor-permalink" href="#1d.-Patients-(25-patients-in-the-outbreak)" title="Permalink"></a></h3><pre><code class="language-julia hljs">patient_data = [
+    # (id, age_group, risk_factors, vaccination_status)
+    (&quot;P001&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;, &quot;chronic lung disease&quot;],    &quot;vaccinated&quot;),
+    (&quot;P002&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;, &quot;diabetes&quot;],                &quot;vaccinated&quot;),
+    (&quot;P003&quot;, &quot;40-64&quot;, [&quot;healthcare worker&quot;],                      &quot;vaccinated&quot;),
+    (&quot;P004&quot;, &quot;18-39&quot;, String[],                                   &quot;unvaccinated&quot;),
+    (&quot;P005&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;, &quot;cardiovascular disease&quot;],  &quot;vaccinated&quot;),
+    (&quot;P006&quot;, &quot;5-17&quot;,  String[],                                   &quot;vaccinated&quot;),
+    (&quot;P007&quot;, &quot;5-17&quot;,  String[],                                   &quot;unvaccinated&quot;),
+    (&quot;P008&quot;, &quot;18-39&quot;, [&quot;pregnancy&quot;],                              &quot;vaccinated&quot;),
+    (&quot;P009&quot;, &quot;40-64&quot;, [&quot;obesity&quot;],                                &quot;unvaccinated&quot;),
+    (&quot;P010&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;, &quot;immunocompromised&quot;],       &quot;vaccinated&quot;),
+    (&quot;P011&quot;, &quot;0-4&quot;,   String[],                                   &quot;unvaccinated&quot;),
+    (&quot;P012&quot;, &quot;40-64&quot;, [&quot;healthcare worker&quot;],                      &quot;vaccinated&quot;),
+    (&quot;P013&quot;, &quot;18-39&quot;, String[],                                   &quot;vaccinated&quot;),
+    (&quot;P014&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;, &quot;chronic lung disease&quot;],    &quot;unvaccinated&quot;),
+    (&quot;P015&quot;, &quot;5-17&quot;,  String[],                                   &quot;vaccinated&quot;),
+    (&quot;P016&quot;, &quot;40-64&quot;, [&quot;diabetes&quot;, &quot;obesity&quot;],                    &quot;unvaccinated&quot;),
+    (&quot;P017&quot;, &quot;18-39&quot;, [&quot;healthcare worker&quot;],                      &quot;vaccinated&quot;),
+    (&quot;P018&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;],                            &quot;vaccinated&quot;),
+    (&quot;P019&quot;, &quot;0-4&quot;,   String[],                                   &quot;unvaccinated&quot;),
+    (&quot;P020&quot;, &quot;40-64&quot;, String[],                                   &quot;vaccinated&quot;),
+    (&quot;P021&quot;, &quot;18-39&quot;, String[],                                   &quot;unvaccinated&quot;),
+    (&quot;P022&quot;, &quot;65+&quot;,   [&quot;age over 65&quot;, &quot;immunocompromised&quot;],       &quot;vaccinated&quot;),
+    (&quot;P023&quot;, &quot;5-17&quot;,  String[],                                   &quot;vaccinated&quot;),
+    (&quot;P024&quot;, &quot;40-64&quot;, [&quot;chronic lung disease&quot;],                   &quot;vaccinated&quot;),
+    (&quot;P025&quot;, &quot;18-39&quot;, [&quot;healthcare worker&quot;],                      &quot;vaccinated&quot;),
+]
+
+patient_nodes = Dict{String, Any}()
+for (id, age_group, risks, vax) in patient_data
+    p = mem_vertex!(store, id, &quot;patients&quot;)
+    patient_nodes[id] = p
+    # Age group — EXPRESS property
+    age_node = mem_vertex!(store, &quot;age group: $age_group&quot;, &quot;demographics&quot;)
+    mem_edge!(store, p, &quot;note&quot;, age_node)
+    # Vaccination status
+    vax_node = mem_vertex!(store, &quot;vaccination: $vax&quot;, &quot;interventions&quot;)
+    mem_edge!(store, p, &quot;note&quot;, vax_node)
+    # Risk factors — CONTAINS (patient has risk factor)
+    for rf in risks
+        mem_edge!(store, p, &quot;has-pt&quot;, risk_nodes[rf])
+    end
+end
+
+println(&quot;$(length(patient_nodes)) patients created&quot;)</code></pre><pre><code class="nohighlight hljs">25 patients created</code></pre><h2 id="2.-Surveillance-Data-—-Case-Reports"><a class="docs-heading-anchor" href="#2.-Surveillance-Data-—-Case-Reports">2. Surveillance Data — Case Reports</a><a id="2.-Surveillance-Data-—-Case-Reports-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Surveillance-Data-—-Case-Reports" title="Permalink"></a></h2><p>Each case report links a patient to a pathogen, location, onset date, severity, and symptoms. In SST, these are chains of typed arrows emanating from a case-report hub node.</p><pre><code class="language-julia hljs">case_records = [
+    # (case_id, patient, pathogen_ref, location_ref, onset, severity, symptoms)
+    (1,  &quot;P001&quot;, flu, &quot;care_home_A&quot;,     &quot;2025-01-15&quot;, &quot;severe&quot;,   &quot;fever,cough,dyspnoea,myalgia&quot;),
+    (2,  &quot;P002&quot;, flu, &quot;care_home_A&quot;,     &quot;2025-01-16&quot;, &quot;moderate&quot;, &quot;fever,cough,fatigue&quot;),
+    (3,  &quot;P003&quot;, flu, &quot;royal_infirmary&quot;, &quot;2025-01-17&quot;, &quot;mild&quot;,     &quot;fever,cough,sore throat&quot;),
+    (4,  &quot;P010&quot;, flu, &quot;care_home_A&quot;,     &quot;2025-01-18&quot;, &quot;severe&quot;,   &quot;fever,cough,dyspnoea,hypoxia&quot;),
+    (5,  &quot;P018&quot;, flu, &quot;care_home_B&quot;,     &quot;2025-01-19&quot;, &quot;moderate&quot;, &quot;fever,cough,myalgia,fatigue&quot;),
+    (6,  &quot;P004&quot;, cov, &quot;general_hospital&quot;,&quot;2025-01-20&quot;, &quot;mild&quot;,     &quot;cough,sore throat,headache&quot;),
+    (7,  &quot;P005&quot;, cov, &quot;general_hospital&quot;,&quot;2025-01-21&quot;, &quot;severe&quot;,   &quot;fever,cough,dyspnoea,hypoxia,fatigue&quot;),
+    (8,  &quot;P009&quot;, cov, &quot;general_hospital&quot;,&quot;2025-01-22&quot;, &quot;moderate&quot;, &quot;fever,cough,myalgia&quot;),
+    (9,  &quot;P012&quot;, cov, &quot;royal_infirmary&quot;, &quot;2025-01-22&quot;, &quot;mild&quot;,     &quot;cough,rhinorrhoea&quot;),
+    (10, &quot;P013&quot;, cov, &quot;general_hospital&quot;,&quot;2025-01-23&quot;, &quot;mild&quot;,     &quot;cough,sore throat&quot;),
+    (11, &quot;P006&quot;, rsv, &quot;primary_school&quot;,  &quot;2025-01-14&quot;, &quot;moderate&quot;, &quot;cough,wheeze,rhinorrhoea&quot;),
+    (12, &quot;P007&quot;, rsv, &quot;primary_school&quot;,  &quot;2025-01-15&quot;, &quot;moderate&quot;, &quot;cough,wheeze,fever&quot;),
+    (13, &quot;P011&quot;, rsv, &quot;royal_infirmary&quot;, &quot;2025-01-17&quot;, &quot;severe&quot;,   &quot;cough,wheeze,dyspnoea,tachypnoea,hypoxia&quot;),
+    (14, &quot;P015&quot;, rsv, &quot;secondary_school&quot;,&quot;2025-01-18&quot;, &quot;mild&quot;,     &quot;cough,rhinorrhoea&quot;),
+    (15, &quot;P019&quot;, rsv, &quot;royal_infirmary&quot;, &quot;2025-01-19&quot;, &quot;severe&quot;,   &quot;wheeze,dyspnoea,tachypnoea,hypoxia&quot;),
+    (16, &quot;P008&quot;, flu, &quot;general_hospital&quot;,&quot;2025-01-20&quot;, &quot;moderate&quot;, &quot;fever,cough,myalgia&quot;),
+    (17, &quot;P014&quot;, flu, &quot;care_home_B&quot;,     &quot;2025-01-21&quot;, &quot;severe&quot;,   &quot;fever,cough,dyspnoea,hypoxia&quot;),
+    (18, &quot;P016&quot;, cov, &quot;general_hospital&quot;,&quot;2025-01-24&quot;, &quot;moderate&quot;, &quot;fever,cough,fatigue,myalgia&quot;),
+    (19, &quot;P017&quot;, cov, &quot;royal_infirmary&quot;, &quot;2025-01-24&quot;, &quot;mild&quot;,     &quot;cough,sore throat&quot;),
+    (20, &quot;P020&quot;, cov, &quot;general_hospital&quot;,&quot;2025-01-25&quot;, &quot;mild&quot;,     &quot;cough,rhinorrhoea,headache&quot;),
+    (21, &quot;P021&quot;, flu, &quot;secondary_school&quot;,&quot;2025-01-22&quot;, &quot;mild&quot;,     &quot;fever,cough,sore throat&quot;),
+    (22, &quot;P022&quot;, flu, &quot;care_home_A&quot;,     &quot;2025-01-23&quot;, &quot;severe&quot;,   &quot;fever,cough,dyspnoea,hypoxia,fatigue&quot;),
+    (23, &quot;P023&quot;, rsv, &quot;primary_school&quot;,  &quot;2025-01-20&quot;, &quot;mild&quot;,     &quot;cough,rhinorrhoea&quot;),
+    (24, &quot;P024&quot;, cov, &quot;royal_infirmary&quot;, &quot;2025-01-25&quot;, &quot;moderate&quot;, &quot;fever,cough,dyspnoea&quot;),
+    (25, &quot;P025&quot;, cov, &quot;royal_infirmary&quot;, &quot;2025-01-26&quot;, &quot;mild&quot;,     &quot;cough,fatigue&quot;),
+]
+
+# Store case-report hub nodes with star topology
+case_nodes = Dict{Int, Any}()
+patient_pathogen = Dict{String, Any}()  # for later use
+patient_severity = Dict{String, String}()
+patient_onset = Dict{String, String}()
+
+for (id, pid, pathogen, loc_id, onset, severity, symp_str) in case_records
+    # Case report hub node
+    case = mem_vertex!(store, &quot;Case $id: $pid&quot;, &quot;case reports&quot;)
+    case_nodes[id] = case
+
+    # Patient → Case (patient leads to case report)
+    mem_edge!(store, patient_nodes[pid], &quot;then&quot;, case)
+
+    # Case → Pathogen (infected by — a causal relationship)
+    mem_edge!(store, case, &quot;then&quot;, pathogen)
+
+    # Case → Location (case at location — containment)
+    mem_edge!(store, locations[loc_id], &quot;contain&quot;, case)
+
+    # Case properties — EXPRESS
+    onset_node = mem_vertex!(store, &quot;onset: $onset&quot;, &quot;timeline&quot;)
+    mem_edge!(store, case, &quot;note&quot;, onset_node)
+
+    sev_node = mem_vertex!(store, &quot;severity: $severity&quot;, &quot;clinical&quot;)
+    mem_edge!(store, case, &quot;note&quot;, sev_node)
+
+    # Symptoms — each symptom is linked from the case
+    for s in split(symp_str, &quot;,&quot;)
+        s = strip(String(s))
+        if haskey(symptom_nodes, s)
+            mem_edge!(store, case, &quot;has-pt&quot;, symptom_nodes[s])
+        end
+    end
+
+    patient_pathogen[pid] = pathogen
+    patient_severity[pid] = severity
+    patient_onset[pid] = onset
+end
+
+println(&quot;$(length(case_records)) case reports with star topology&quot;)
+println(&quot;Graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">25 case reports with star topology
+Graph: 112 nodes, 592 links</code></pre><h2 id="3.-Contact-Tracing-and-Transmission-Events"><a class="docs-heading-anchor" href="#3.-Contact-Tracing-and-Transmission-Events">3. Contact Tracing and Transmission Events</a><a id="3.-Contact-Tracing-and-Transmission-Events-1"></a><a class="docs-heading-anchor-permalink" href="#3.-Contact-Tracing-and-Transmission-Events" title="Permalink"></a></h2><p>In SST, contacts are <strong>NEAR</strong> relationships (proximity/similarity), while transmission events are <strong>LEADSTO</strong> (causal direction). This mirrors the fundamental spacetime distinction: spatial proximity ≠ causal ordering.</p><pre><code class="language-julia hljs"># Known contacts — bidirectional NEAR relationships
+contacts = [
+    (&quot;P001&quot;, &quot;P002&quot;), (&quot;P001&quot;, &quot;P010&quot;), (&quot;P002&quot;, &quot;P010&quot;),
+    (&quot;P002&quot;, &quot;P022&quot;), (&quot;P003&quot;, &quot;P012&quot;), (&quot;P003&quot;, &quot;P017&quot;),
+    (&quot;P012&quot;, &quot;P017&quot;), (&quot;P006&quot;, &quot;P007&quot;), (&quot;P006&quot;, &quot;P015&quot;),
+    (&quot;P004&quot;, &quot;P009&quot;), (&quot;P005&quot;, &quot;P009&quot;), (&quot;P009&quot;, &quot;P013&quot;),
+    (&quot;P013&quot;, &quot;P016&quot;), (&quot;P016&quot;, &quot;P020&quot;), (&quot;P011&quot;, &quot;P019&quot;),
+    (&quot;P003&quot;, &quot;P001&quot;), (&quot;P017&quot;, &quot;P024&quot;), (&quot;P025&quot;, &quot;P019&quot;),
+]
+
+for (a, b) in contacts
+    mem_edge!(store, patient_nodes[a], &quot;ll&quot;, patient_nodes[b])
+end
+
+# Known transmissions — directed LEADSTO arrows
+transmissions = [
+    (&quot;P001&quot;, &quot;P002&quot;), (&quot;P001&quot;, &quot;P010&quot;), (&quot;P002&quot;, &quot;P022&quot;),
+    (&quot;P006&quot;, &quot;P007&quot;), (&quot;P004&quot;, &quot;P009&quot;), (&quot;P009&quot;, &quot;P013&quot;),
+    (&quot;P013&quot;, &quot;P016&quot;), (&quot;P016&quot;, &quot;P020&quot;), (&quot;P011&quot;, &quot;P019&quot;),
+    (&quot;P003&quot;, &quot;P017&quot;),
+]
+
+for (src, tgt) in transmissions
+    mem_edge!(store, patient_nodes[src], &quot;then&quot;, patient_nodes[tgt])
+end
+
+println(&quot;$(length(contacts)) contact links (NEAR), $(length(transmissions)) transmissions (LEADSTO)&quot;)</code></pre><pre><code class="nohighlight hljs">18 contact links (NEAR), 10 transmissions (LEADSTO)</code></pre><h2 id="4.-Outbreak-Definitions"><a class="docs-heading-anchor" href="#4.-Outbreak-Definitions">4. Outbreak Definitions</a><a id="4.-Outbreak-Definitions-1"></a><a class="docs-heading-anchor-permalink" href="#4.-Outbreak-Definitions" title="Permalink"></a></h2><p>Each outbreak is a container that groups case reports by pathogen.</p><pre><code class="language-julia hljs"># Three concurrent outbreaks
+flu_outbreak = mem_vertex!(store, &quot;Influenza A H3N2 winter outbreak&quot;, &quot;outbreaks&quot;)
+cov_outbreak = mem_vertex!(store, &quot;SARS-CoV-2 JN.1 nosocomial cluster&quot;, &quot;outbreaks&quot;)
+rsv_outbreak = mem_vertex!(store, &quot;RSV-B paediatric wave&quot;, &quot;outbreaks&quot;)
+
+outbreak_map = Dict(flu =&gt; flu_outbreak, cov =&gt; cov_outbreak, rsv =&gt; rsv_outbreak)
+
+for (id, pid, pathogen, _...) in case_records
+    mem_edge!(store, outbreak_map[pathogen], &quot;contain&quot;, case_nodes[id])
+end
+
+println(&quot;Three outbreaks defined&quot;)
+println(&quot;Total graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Three outbreaks defined
+Total graph: 115 nodes, 698 links</code></pre><h2 id="5.-Epidemiological-Queries-—-SST-Graph-Traversal"><a class="docs-heading-anchor" href="#5.-Epidemiological-Queries-—-SST-Graph-Traversal">5. Epidemiological Queries — SST Graph Traversal</a><a id="5.-Epidemiological-Queries-—-SST-Graph-Traversal-1"></a><a class="docs-heading-anchor-permalink" href="#5.-Epidemiological-Queries-—-SST-Graph-Traversal" title="Permalink"></a></h2><h3 id="5a.-Cases-per-pathogen"><a class="docs-heading-anchor" href="#5a.-Cases-per-pathogen">5a. Cases per pathogen</a><a id="5a.-Cases-per-pathogen-1"></a><a class="docs-heading-anchor-permalink" href="#5a.-Cases-per-pathogen" title="Permalink"></a></h3><p>In RDF, this would be a SPARQL <code>GROUP BY</code> query. In SST, we traverse containment arrows from each outbreak node.</p><pre><code class="language-julia hljs">println(&quot;Cases by pathogen:&quot;)
+println(&quot;─&quot;^40)
+for (pathogen_node, outbreak_node) in [(flu, flu_outbreak), (cov, cov_outbreak), (rsv, rsv_outbreak)]
+    cone = forward_cone(store, outbreak_node.nptr; depth=1)
+    # Collect all unique destination nodes from cone paths
+    seen = Set{NodePtr}()
+    cases = 0
+    for path in cone.paths
+        for lnk in path
+            lnk.dst in seen &amp;&amp; continue
+            push!(seen, lnk.dst)
+            n = mem_get_node(store, lnk.dst)
+            if n !== nothing &amp;&amp; startswith(n.s, &quot;Case &quot;)
+                cases += 1
+            end
+        end
+    end
+    println(&quot;  $(rpad(pathogen_node.s, 25)) $cases cases&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Cases by pathogen:
+────────────────────────────────────────
+  Influenza A H3N2          9 cases
+  SARS-CoV-2 JN.1           10 cases
+  RSV subtype B             6 cases</code></pre><h3 id="5b.-Severity-distribution"><a class="docs-heading-anchor" href="#5b.-Severity-distribution">5b. Severity distribution</a><a id="5b.-Severity-distribution-1"></a><a class="docs-heading-anchor-permalink" href="#5b.-Severity-distribution" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Severity distribution:&quot;)
+println(rpad(&quot;Pathogen&quot;, 25), rpad(&quot;Severe&quot;, 10), rpad(&quot;Moderate&quot;, 10), &quot;Mild&quot;)
+println(&quot;─&quot;^55)
+
+pathogen_names = Dict(flu =&gt; &quot;Influenza A H3N2&quot;, cov =&gt; &quot;SARS-CoV-2 JN.1&quot;, rsv =&gt; &quot;RSV subtype B&quot;)
+
+for (pnode, pname) in pathogen_names
+    counts = Dict(&quot;severe&quot; =&gt; 0, &quot;moderate&quot; =&gt; 0, &quot;mild&quot; =&gt; 0)
+    for (_, pid, pathogen, _, _, severity, _) in case_records
+        if pathogen === pnode
+            counts[severity] = get(counts, severity, 0) + 1
+        end
+    end
+    println(rpad(pname, 25),
+            rpad(string(counts[&quot;severe&quot;]), 10),
+            rpad(string(counts[&quot;moderate&quot;]), 10),
+            counts[&quot;mild&quot;])
+end</code></pre><pre><code class="nohighlight hljs">Severity distribution:
+Pathogen                 Severe    Moderate  Mild
+───────────────────────────────────────────────────────
+RSV subtype B            2         2         2
+Influenza A H3N2         4         3         2
+SARS-CoV-2 JN.1          1         3         6</code></pre><h3 id="5c.-Cases-per-location"><a class="docs-heading-anchor" href="#5c.-Cases-per-location">5c. Cases per location</a><a id="5c.-Cases-per-location-1"></a><a class="docs-heading-anchor-permalink" href="#5c.-Cases-per-location" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Cases by location:&quot;)
+println(&quot;─&quot;^40)
+for (loc_id, loc_node) in sort(collect(locations), by=x-&gt;x.first)
+    # Count cases contained at this location
+    count = 0
+    for (_, _, _, lid, _, _, _) in case_records
+        if lid == loc_id
+            count += 1
+        end
+    end
+    label = first(split(loc_node.s, &#39;\n&#39;))
+    println(&quot;  $(rpad(label, 30)) $count cases&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Cases by location:
+────────────────────────────────────────
+  Sunrise Care Home              4 cases
+  Meadowbrook Care Home          2 cases
+  General Hospital               7 cases
+  Oakfield Primary School        3 cases
+  Royal Infirmary                7 cases
+  Riverside Academy              2 cases</code></pre><h3 id="5d.-Most-common-symptoms"><a class="docs-heading-anchor" href="#5d.-Most-common-symptoms">5d. Most common symptoms</a><a id="5d.-Most-common-symptoms-1"></a><a class="docs-heading-anchor-permalink" href="#5d.-Most-common-symptoms" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Count symptom frequency across all case reports using graph links
+println(&quot;Symptom frequency:&quot;)
+println(&quot;─&quot;^35)
+
+symptom_freq = Dict{String, Int}()
+for (_, _, _, _, _, _, symp_str) in case_records
+    for s in split(symp_str, &quot;,&quot;)
+        s = strip(String(s))
+        symptom_freq[s] = get(symptom_freq, s, 0) + 1
+    end
+end
+
+for (s, f) in sort(collect(symptom_freq), by=x -&gt; -x.second)
+    bar = &quot;█&quot;^f
+    println(&quot;  $(rpad(s, 15)) $bar $f&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Symptom frequency:
+───────────────────────────────────
+  cough           ████████████████████████ 24
+  fever           ██████████████ 14
+  dyspnoea        ████████ 8
+  hypoxia         ██████ 6
+  fatigue         ██████ 6
+  sore throat     █████ 5
+  myalgia         █████ 5
+  rhinorrhoea     █████ 5
+  wheeze          ████ 4
+  tachypnoea      ██ 2
+  headache        ██ 2</code></pre><h3 id="5e.-Vulnerable-patients-with-severe-outcomes"><a class="docs-heading-anchor" href="#5e.-Vulnerable-patients-with-severe-outcomes">5e. Vulnerable patients with severe outcomes</a><a id="5e.-Vulnerable-patients-with-severe-outcomes-1"></a><a class="docs-heading-anchor-permalink" href="#5e.-Vulnerable-patients-with-severe-outcomes" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Severe cases with risk factors:&quot;)
+println(&quot;─&quot;^60)
+for (id, age_group, risks, vax) in patient_data
+    if haskey(patient_severity, id) &amp;&amp; patient_severity[id] == &quot;severe&quot; &amp;&amp; !isempty(risks)
+        pathogen_name = if haskey(patient_pathogen, id)
+            patient_pathogen[id].s
+        else
+            &quot;unknown&quot;
+        end
+        println(&quot;  $id ($age_group) — $pathogen_name, risks: $(join(risks, &quot;, &quot;))&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Severe cases with risk factors:
+────────────────────────────────────────────────────────────
+  P001 (65+) — Influenza A H3N2, risks: age over 65, chronic lung disease
+  P005 (65+) — SARS-CoV-2 JN.1, risks: age over 65, cardiovascular disease
+  P010 (65+) — Influenza A H3N2, risks: age over 65, immunocompromised
+  P014 (65+) — Influenza A H3N2, risks: age over 65, chronic lung disease
+  P022 (65+) — Influenza A H3N2, risks: age over 65, immunocompromised</code></pre><h3 id="5f.-Healthcare-worker-cases"><a class="docs-heading-anchor" href="#5f.-Healthcare-worker-cases">5f. Healthcare worker cases</a><a id="5f.-Healthcare-worker-cases-1"></a><a class="docs-heading-anchor-permalink" href="#5f.-Healthcare-worker-cases" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Healthcare worker cases (potential nosocomial transmission):&quot;)
+println(&quot;─&quot;^65)
+hcw_ids = [id for (id, _, risks, _) in patient_data if &quot;healthcare worker&quot; in risks]
+for hcw in sort(hcw_ids)
+    if haskey(patient_onset, hcw)
+        pname = patient_pathogen[hcw].s
+        # Find location
+        loc_name = &quot;&quot;
+        for (_, pid, _, lid, _, _, _) in case_records
+            if pid == hcw
+                loc_name = locations[lid].s
+                break
+            end
+        end
+        println(&quot;  $(patient_onset[hcw]) | $hcw | $pname | $loc_name&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Healthcare worker cases (potential nosocomial transmission):
+─────────────────────────────────────────────────────────────────
+  2025-01-17 | P003 | Influenza A H3N2 | Royal Infirmary
+  2025-01-22 | P012 | SARS-CoV-2 JN.1 | Royal Infirmary
+  2025-01-24 | P017 | SARS-CoV-2 JN.1 | Royal Infirmary
+  2025-01-26 | P025 | SARS-CoV-2 JN.1 | Royal Infirmary</code></pre><h2 id="6.-Contact-Tracing-—-Forward-Cones-and-Path-Finding"><a class="docs-heading-anchor" href="#6.-Contact-Tracing-—-Forward-Cones-and-Path-Finding">6. Contact Tracing — Forward Cones and Path Finding</a><a id="6.-Contact-Tracing-—-Forward-Cones-and-Path-Finding-1"></a><a class="docs-heading-anchor-permalink" href="#6.-Contact-Tracing-—-Forward-Cones-and-Path-Finding" title="Permalink"></a></h2><p>SST’s <strong>forward cone</strong> is the natural analogue of SPARQL property paths. Starting from an index case, the cone traces all reachable nodes through causal (LEADSTO) arrows — exactly what epidemiological contact tracing needs.</p><h3 id="6a.-Contact-chain-from-index-case-P001"><a class="docs-heading-anchor" href="#6a.-Contact-chain-from-index-case-P001">6a. Contact chain from index case P001</a><a id="6a.-Contact-chain-from-index-case-P001-1"></a><a class="docs-heading-anchor-permalink" href="#6a.-Contact-chain-from-index-case-P001" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Forward cone from P001 — traces all reachable connections
+cone_p001 = forward_cone(store, patient_nodes[&quot;P001&quot;].nptr; depth=5)
+
+# Collect all unique patient nodes reachable from P001
+reachable = Set{String}()
+for path in cone_p001.paths
+    for lnk in path
+        n = mem_get_node(store, lnk.dst)
+        if n !== nothing &amp;&amp; n.chap == &quot;patients&quot; &amp;&amp; n.s != &quot;P001&quot;
+            push!(reachable, n.s)
+        end
+    end
+end
+
+println(&quot;Contact/transmission chain from P001 ($(length(reachable)) patients reachable):&quot;)
+for pid in sort(collect(reachable))
+    println(&quot;  → $pid&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Contact/transmission chain from P001 (3 patients reachable):
+  → P002
+  → P010
+  → P022</code></pre><h3 id="6b.-Transmission-chain-—-path-finding"><a class="docs-heading-anchor" href="#6b.-Transmission-chain-—-path-finding">6b. Transmission chain — path finding</a><a id="6b.-Transmission-chain-—-path-finding-1"></a><a class="docs-heading-anchor-permalink" href="#6b.-Transmission-chain-—-path-finding" title="Permalink"></a></h3><p>SST path solving traces specific routes through the graph, revealing the hop-by-hop transmission chain.</p><pre><code class="language-julia hljs"># Find paths from P004 (COVID index) to P020 (end of chain)
+result = find_paths(store, patient_nodes[&quot;P004&quot;].nptr, patient_nodes[&quot;P020&quot;].nptr; max_depth=8)
+
+if !isempty(result.paths)
+    path_nodes = result.paths[1]  # first DAG path
+    println(&quot;Transmission chain P004 → P020 ($(length(path_nodes)) nodes, $(length(result.paths)) paths found):&quot;)
+    for (i, nptr) in enumerate(path_nodes)
+        n = mem_get_node(store, nptr)
+        if n !== nothing
+            label = first(split(n.s, &#39;\n&#39;))
+            prefix = i == 1 ? &quot;  &quot; : &quot;  → &quot;
+            println(&quot;$prefix$label [$(n.chap)]&quot;)
+        end
+    end
+else
+    println(&quot;No DAG path found P004 → P020 ($(length(result.loops)) loop paths)&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Transmission chain P004 → P020 (5 nodes, 1 paths found):
+  P004 [patients]
+  → P009 [patients]
+  → P013 [patients]
+  → P016 [patients]
+  → P020 [patients]</code></pre><h3 id="6c.-Backward-cone-—-who-could-have-infected-P022?"><a class="docs-heading-anchor" href="#6c.-Backward-cone-—-who-could-have-infected-P022?">6c. Backward cone — who could have infected P022?</a><a id="6c.-Backward-cone-—-who-could-have-infected-P022?-1"></a><a class="docs-heading-anchor-permalink" href="#6c.-Backward-cone-—-who-could-have-infected-P022?" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Backward cone traces incoming arrows — who led to this patient?
+cone_back = backward_cone(store, patient_nodes[&quot;P022&quot;].nptr; depth=3)
+
+reachable_back = Set{String}()
+for path in cone_back.paths
+    for lnk in path
+        n = mem_get_node(store, lnk.dst)
+        if n !== nothing &amp;&amp; n.chap == &quot;patients&quot; &amp;&amp; n.s != &quot;P022&quot;
+            push!(reachable_back, n.s)
+        end
+    end
+end
+
+println(&quot;Backward cone from P022 (potential sources):&quot;)
+for pid in sort(collect(reachable_back))
+    println(&quot;  ← $pid&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Backward cone from P022 (potential sources):
+  ← P001
+  ← P002</code></pre><h2 id="7.-Network-Analysis-—-Identifying-Super-Spreaders"><a class="docs-heading-anchor" href="#7.-Network-Analysis-—-Identifying-Super-Spreaders">7. Network Analysis — Identifying Super-Spreaders</a><a id="7.-Network-Analysis-—-Identifying-Super-Spreaders-1"></a><a class="docs-heading-anchor-permalink" href="#7.-Network-Analysis-—-Identifying-Super-Spreaders" title="Permalink"></a></h2><h3 id="7a.-Adjacency-matrix-and-centrality"><a class="docs-heading-anchor" href="#7a.-Adjacency-matrix-and-centrality">7a. Adjacency matrix and centrality</a><a id="7a.-Adjacency-matrix-and-centrality-1"></a><a class="docs-heading-anchor-permalink" href="#7a.-Adjacency-matrix-and-centrality" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Build adjacency matrix from patient transmission subgraph
+adj = SemanticSpacetime.AdjacencyMatrix()
+
+for (src, tgt) in transmissions
+    src_ptr = patient_nodes[src].nptr
+    tgt_ptr = patient_nodes[tgt].nptr
+    SemanticSpacetime.add_edge!(adj, src_ptr, tgt_ptr, 1.0)
+end
+
+# Add contact edges with lower weight
+for (a, b) in contacts
+    a_ptr = patient_nodes[a].nptr
+    b_ptr = patient_nodes[b].nptr
+    SemanticSpacetime.add_edge!(adj, a_ptr, b_ptr, 0.3)
+end
+
+println(graph_summary(adj))</code></pre><pre><code class="nohighlight hljs">Graph Summary
+─────────────
+  Nodes:   20
+  Links:   18 (directed)
+  Sources: 6
+  Sinks:   7
+  Top centrality:
+    (1,40)  0.0500
+    (1,21)  0.0500
+    (1,27)  0.0500
+    (1,26)  0.0500
+    (1,42)  0.0500</code></pre><h3 id="7b.-Eigenvector-centrality-—-who-is-most-connected?"><a class="docs-heading-anchor" href="#7b.-Eigenvector-centrality-—-who-is-most-connected?">7b. Eigenvector centrality — who is most connected?</a><a id="7b.-Eigenvector-centrality-—-who-is-most-connected?-1"></a><a class="docs-heading-anchor-permalink" href="#7b.-Eigenvector-centrality-—-who-is-most-connected?" title="Permalink"></a></h3><pre><code class="language-julia hljs">if !isempty(adj.nodes)
+    centrality = eigenvector_centrality(adj; max_iter=100, tol=1e-6)
+    ranked = sort(collect(centrality), by=x -&gt; x.second, rev=true)
+
+    println(&quot;Patient centrality (transmission + contact network):&quot;)
+    println(&quot;─&quot;^45)
+    for (nptr, score) in ranked[1:min(10, length(ranked))]
+        node = mem_get_node(store, nptr)
+        if node !== nothing
+            pid = node.s
+            sev = get(patient_severity, pid, &quot;?&quot;)
+            println(&quot;  $(rpad(pid, 8)) score=$(rpad(round(score, digits=4), 8)) severity=$sev&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Patient centrality (transmission + contact network):
+─────────────────────────────────────────────
+  P020     score=0.05     severity=mild
+  P001     score=0.05     severity=severe
+  P007     score=0.05     severity=moderate
+  P006     score=0.05     severity=moderate
+  P022     score=0.05     severity=severe
+  P015     score=0.05     severity=mild
+  P010     score=0.05     severity=severe
+  P004     score=0.05     severity=mild
+  P017     score=0.05     severity=mild
+  P003     score=0.05     severity=mild</code></pre><h3 id="7c.-Sources-and-sinks-—-index-cases-and-endpoints"><a class="docs-heading-anchor" href="#7c.-Sources-and-sinks-—-index-cases-and-endpoints">7c. Sources and sinks — index cases and endpoints</a><a id="7c.-Sources-and-sinks-—-index-cases-and-endpoints-1"></a><a class="docs-heading-anchor-permalink" href="#7c.-Sources-and-sinks-—-index-cases-and-endpoints" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Build a directed-only adjacency matrix for transmission
+adj_tx = SemanticSpacetime.AdjacencyMatrix()
+for (src, tgt) in transmissions
+    SemanticSpacetime.add_edge!(adj_tx, patient_nodes[src].nptr, patient_nodes[tgt].nptr, 1.0)
+end
+
+sources = find_sources(adj_tx)
+sinks = find_sinks(adj_tx)
+
+println(&quot;Index cases (transmission sources):&quot;)
+for nptr in sources
+    n = mem_get_node(store, nptr)
+    n !== nothing &amp;&amp; println(&quot;  ⚠ $(n.s) — $(get(patient_pathogen, n.s, nothing) !== nothing ? patient_pathogen[n.s].s : &quot;?&quot;)&quot;)
+end
+
+println(&quot;\nEndpoint cases (transmission sinks):&quot;)
+for nptr in sinks
+    n = mem_get_node(store, nptr)
+    n !== nothing &amp;&amp; println(&quot;  ○ $(n.s)&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Index cases (transmission sources):
+  ⚠ P001 — Influenza A H3N2
+  ⚠ P003 — Influenza A H3N2
+  ⚠ P004 — SARS-CoV-2 JN.1
+  ⚠ P006 — RSV subtype B
+  ⚠ P011 — RSV subtype B
+
+Endpoint cases (transmission sinks):
+  ○ P007
+  ○ P010
+  ○ P017
+  ○ P019
+  ○ P020
+  ○ P022</code></pre><h2 id="8.-Risk-Inference-—-SST-Contextual-Analysis"><a class="docs-heading-anchor" href="#8.-Risk-Inference-—-SST-Contextual-Analysis">8. Risk Inference — SST Contextual Analysis</a><a id="8.-Risk-Inference-—-SST-Contextual-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#8.-Risk-Inference-—-SST-Contextual-Analysis" title="Permalink"></a></h2><p>Instead of Datalog reasoning, SST uses <strong>contextual analysis</strong> and <strong>graph traversal</strong> to infer risk categories. The spacetime type system provides a natural framework: LEADSTO arrows carry causal weight, while CONTAINS and EXPRESS arrows provide structural context.</p><h3 id="8a.-Risk-classification"><a class="docs-heading-anchor" href="#8a.-Risk-classification">8a. Risk classification</a><a id="8a.-Risk-classification-1"></a><a class="docs-heading-anchor-permalink" href="#8a.-Risk-classification" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Risk Classification&quot;)
+println(&quot;════════════════════&quot;)
+
+# High-risk elderly: age 65+ with severe outcome
+println(&quot;\nHigh-risk elderly (65+ with severe outcome):&quot;)
+for (id, age_group, risks, vax) in patient_data
+    if age_group == &quot;65+&quot; &amp;&amp; get(patient_severity, id, &quot;&quot;) == &quot;severe&quot;
+        println(&quot;  ⚠ $id — risks: $(isempty(risks) ? &quot;none&quot; : join(risks, &quot;, &quot;))&quot;)
+    end
+end
+
+# High-risk paediatric: age 0-4 with severe outcome
+println(&quot;\nHigh-risk paediatric (0-4 with severe outcome):&quot;)
+for (id, age_group, _, _) in patient_data
+    if age_group == &quot;0-4&quot; &amp;&amp; get(patient_severity, id, &quot;&quot;) == &quot;severe&quot;
+        println(&quot;  ⚠ $id&quot;)
+    end
+end
+
+# Potential super-spreaders: patients who transmitted to ≥2 others
+tx_count = Dict{String, Int}()
+for (src, _) in transmissions
+    tx_count[src] = get(tx_count, src, 0) + 1
+end
+println(&quot;\nPotential super-spreaders (transmitted to ≥2):&quot;)
+for (pid, count) in sort(collect(tx_count), by=x -&gt; -x.second)
+    if count &gt;= 2
+        println(&quot;  ⚠ $pid — infected $count others&quot;)
+    end
+end
+
+# HCW-exposed patients
+println(&quot;\nPatients exposed via healthcare worker contact:&quot;)
+for (a, b) in contacts
+    if &quot;healthcare worker&quot; in [rf for (id, _, rfs, _) in patient_data if id == a for rf in rfs]
+        println(&quot;  → $b (exposed via HCW $a)&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Risk Classification
+════════════════════
+
+High-risk elderly (65+ with severe outcome):
+  ⚠ P001 — risks: age over 65, chronic lung disease
+  ⚠ P005 — risks: age over 65, cardiovascular disease
+  ⚠ P010 — risks: age over 65, immunocompromised
+  ⚠ P014 — risks: age over 65, chronic lung disease
+  ⚠ P022 — risks: age over 65, immunocompromised
+
+High-risk paediatric (0-4 with severe outcome):
+  ⚠ P011
+  ⚠ P019
+
+Potential super-spreaders (transmitted to ≥2):
+  ⚠ P001 — infected 2 others
+
+Patients exposed via healthcare worker contact:
+  → P012 (exposed via HCW P003)
+  → P017 (exposed via HCW P003)
+  → P017 (exposed via HCW P012)
+  → P001 (exposed via HCW P003)
+  → P024 (exposed via HCW P017)
+  → P019 (exposed via HCW P025)</code></pre><h3 id="8b.-Serial-interval-analysis"><a class="docs-heading-anchor" href="#8b.-Serial-interval-analysis">8b. Serial interval analysis</a><a id="8b.-Serial-interval-analysis-1"></a><a class="docs-heading-anchor-permalink" href="#8b.-Serial-interval-analysis" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Serial Interval Analysis&quot;)
+println(&quot;════════════════════════&quot;)
+println(rpad(&quot;Pair&quot;, 16), rpad(&quot;Infector&quot;, 10), rpad(&quot;Infectee&quot;, 10),
+        rpad(&quot;SI (days)&quot;, 12), &quot;Class&quot;)
+println(&quot;─&quot;^58)
+
+onset_day = Dict{String, Int}()
+for (_, pid, _, _, onset, _, _) in case_records
+    onset_day[pid] = parse(Int, split(onset, &quot;-&quot;)[3])
+end
+
+for (i, (src, tgt)) in enumerate(transmissions)
+    if haskey(onset_day, src) &amp;&amp; haskey(onset_day, tgt)
+        si = onset_day[tgt] - onset_day[src]
+        cls = si &lt; 2 ? &quot;short&quot; : (si &lt; 5 ? &quot;typical&quot; : &quot;long&quot;)
+        println(rpad(&quot;pair$i&quot;, 16), rpad(src, 10), rpad(tgt, 10),
+                rpad(string(si), 12), cls)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Serial Interval Analysis
+════════════════════════
+Pair            Infector  Infectee  SI (days)   Class
+──────────────────────────────────────────────────────────
+pair1           P001      P002      1           short
+pair2           P001      P010      3           typical
+pair3           P002      P022      7           long
+pair4           P006      P007      1           short
+pair5           P004      P009      2           typical
+pair6           P009      P013      1           short
+pair7           P013      P016      1           short
+pair8           P016      P020      1           short
+pair9           P011      P019      2           typical
+pair10          P003      P017      7           long</code></pre><h3 id="8c.-Clinical-decision-support"><a class="docs-heading-anchor" href="#8c.-Clinical-decision-support">8c. Clinical decision support</a><a id="8c.-Clinical-decision-support-1"></a><a class="docs-heading-anchor-permalink" href="#8c.-Clinical-decision-support" title="Permalink"></a></h3><pre><code class="language-julia hljs">println(&quot;Clinical Decision Support&quot;)
+println(&quot;═════════════════════════&quot;)
+
+actions = Dict{String, Vector{String}}()
+
+for (id, age_group, risks, _) in patient_data
+    sev = get(patient_severity, id, &quot;&quot;)
+    n_contacts = count(c -&gt; c[1] == id || c[2] == id, contacts)
+
+    # Isolation required — severe with contacts
+    if sev == &quot;severe&quot; &amp;&amp; n_contacts &gt;= 1
+        push!(get!(actions, &quot;ISOLATION REQUIRED&quot;, String[]), id)
+    end
+
+    # ICU referral — severe + elderly
+    if sev == &quot;severe&quot; &amp;&amp; age_group == &quot;65+&quot;
+        push!(get!(actions, &quot;ICU REFERRAL&quot;, String[]), id)
+    end
+
+    # Contact tracing priority — ≥3 contacts
+    if n_contacts &gt;= 3
+        push!(get!(actions, &quot;CONTACT TRACING PRIORITY&quot;, String[]), id)
+    end
+
+    # Paediatric escalation — severe + under 5
+    if sev == &quot;severe&quot; &amp;&amp; age_group == &quot;0-4&quot;
+        push!(get!(actions, &quot;PAEDIATRIC ESCALATION&quot;, String[]), id)
+    end
+end
+
+for (action, pids) in sort(collect(actions))
+    println(&quot;\n  $action:&quot;)
+    for p in sort(pids)
+        println(&quot;    → $p&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Clinical Decision Support
+═════════════════════════
+
+  CONTACT TRACING PRIORITY:
+    → P001
+    → P002
+    → P003
+    → P009
+    → P017
+
+  ICU REFERRAL:
+    → P001
+    → P005
+    → P010
+    → P014
+    → P022
+
+  ISOLATION REQUIRED:
+    → P001
+    → P005
+    → P010
+    → P011
+    → P019
+    → P022
+
+  PAEDIATRIC ESCALATION:
+    → P011
+    → P019</code></pre><h2 id="9.-Weighted-Search-—-Risk-Propagation"><a class="docs-heading-anchor" href="#9.-Weighted-Search-—-Risk-Propagation">9. Weighted Search — Risk Propagation</a><a id="9.-Weighted-Search-—-Risk-Propagation-1"></a><a class="docs-heading-anchor-permalink" href="#9.-Weighted-Search-—-Risk-Propagation" title="Permalink"></a></h2><p>SST’s weighted search propagates risk scores through the network, modelling how outbreak risk diffuses through contact chains.</p><pre><code class="language-julia hljs"># Weighted search from index case P001
+wpaths = weighted_search(store, patient_nodes[&quot;P001&quot;].nptr; max_depth=4)
+ranked = rank_by_weight(wpaths)
+
+println(&quot;Risk propagation from index case P001 ($(length(ranked)) paths found):&quot;)
+println(&quot;─&quot;^55)
+seen = Set{String}()
+for wp in ranked[1:min(15, length(ranked))]
+    # Show the endpoint of each path
+    endpoint = last(wp.nodes)
+    n = mem_get_node(store, endpoint)
+    if n !== nothing &amp;&amp; n.chap == &quot;patients&quot; &amp;&amp; n.s ∉ seen &amp;&amp; n.s != &quot;P001&quot;
+        push!(seen, n.s)
+        sev = get(patient_severity, n.s, &quot;?&quot;)
+        println(&quot;  $(rpad(n.s, 8)) path_weight=$(rpad(round(wp.total_weight, digits=2), 8)) severity=$sev&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Risk propagation from index case P001 (3368 paths found):
+───────────────────────────────────────────────────────
+  P005     path_weight=4.0      severity=severe
+  P014     path_weight=4.0      severity=severe
+  P018     path_weight=4.0      severity=moderate
+  P022     path_weight=4.0      severity=severe</code></pre><h2 id="10.-Text-Search-—-Syndromic-Surveillance"><a class="docs-heading-anchor" href="#10.-Text-Search-—-Syndromic-Surveillance">10. Text Search — Syndromic Surveillance</a><a id="10.-Text-Search-—-Syndromic-Surveillance-1"></a><a class="docs-heading-anchor-permalink" href="#10.-Text-Search-—-Syndromic-Surveillance" title="Permalink"></a></h2><p>SST’s text search enables natural-language-style queries, useful for syndromic surveillance where clinicians search for symptom patterns.</p><pre><code class="language-julia hljs"># Search for respiratory distress indicators
+for query in [&quot;dyspnoea&quot;, &quot;hypoxia&quot;, &quot;wheeze&quot;, &quot;severe&quot;]
+    results = mem_search_text(store, query)
+    titles = filter(n -&gt; !occursin(&#39;\n&#39;, n.s) &amp;&amp; length(n.s) &lt; 80, results)
+    println(&quot;Search &#39;$query&#39;: $(length(titles)) matches&quot;)
+    for n in titles[1:min(3, length(titles))]
+        println(&quot;  &#39;$(n.s)&#39; [$(n.chap)]&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Search &#39;dyspnoea&#39;: 1 matches
+  &#39;dyspnoea&#39; [symptoms]
+Search &#39;hypoxia&#39;: 1 matches
+  &#39;hypoxia&#39; [symptoms]
+Search &#39;wheeze&#39;: 1 matches
+  &#39;wheeze&#39; [symptoms]
+Search &#39;severe&#39;: 1 matches
+  &#39;severity: severe&#39; [clinical]</code></pre><h2 id="11.-Epidemic-Curve"><a class="docs-heading-anchor" href="#11.-Epidemic-Curve">11. Epidemic Curve</a><a id="11.-Epidemic-Curve-1"></a><a class="docs-heading-anchor-permalink" href="#11.-Epidemic-Curve" title="Permalink"></a></h2><pre><code class="language-julia hljs">dates = sort(unique([onset for (_, _, _, _, onset, _, _) in case_records]))
+pathogen_short = Dict(flu =&gt; &quot;Flu&quot;, cov =&gt; &quot;CoV&quot;, rsv =&gt; &quot;RSV&quot;)
+
+println(&quot;Epidemic Curve (onset dates)&quot;)
+println(&quot;════════════════════════════&quot;)
+for d in dates
+    day_cases = [(pid, p) for (_, pid, p, _, onset, _, _) in case_records if onset == d]
+    markers = join([pathogen_short[p] for (_, p) in day_cases], &quot; &quot;)
+    bar = &quot;█&quot;^length(day_cases)
+    println(&quot;  $d | $bar $(length(day_cases)) ($markers)&quot;)
+end
+println(&quot;\nLegend: Flu=Influenza, CoV=SARS-CoV-2, RSV=RSV-B&quot;)</code></pre><pre><code class="nohighlight hljs">Epidemic Curve (onset dates)
+════════════════════════════
+  2025-01-14 | █ 1 (RSV)
+  2025-01-15 | ██ 2 (Flu RSV)
+  2025-01-16 | █ 1 (Flu)
+  2025-01-17 | ██ 2 (Flu RSV)
+  2025-01-18 | ██ 2 (Flu RSV)
+  2025-01-19 | ██ 2 (Flu RSV)
+  2025-01-20 | ███ 3 (CoV Flu RSV)
+  2025-01-21 | ██ 2 (CoV Flu)
+  2025-01-22 | ███ 3 (CoV CoV Flu)
+  2025-01-23 | ██ 2 (CoV Flu)
+  2025-01-24 | ██ 2 (CoV CoV)
+  2025-01-25 | ██ 2 (CoV CoV)
+  2025-01-26 | █ 1 (CoV)
+
+Legend: Flu=Influenza, CoV=SARS-CoV-2, RSV=RSV-B</code></pre><h2 id="12.-Location–Pathogen-Heatmap"><a class="docs-heading-anchor" href="#12.-Location–Pathogen-Heatmap">12. Location–Pathogen Heatmap</a><a id="12.-Location–Pathogen-Heatmap-1"></a><a class="docs-heading-anchor-permalink" href="#12.-Location–Pathogen-Heatmap" title="Permalink"></a></h2><pre><code class="language-julia hljs">loc_names_sorted = sort(collect(keys(locations)))
+pathogen_list = [(&quot;Influenza&quot;, flu), (&quot;SARS-CoV-2&quot;, cov), (&quot;RSV-B&quot;, rsv)]
+
+println(rpad(&quot;Location&quot;, 28), join([rpad(p, 14) for (p, _) in pathogen_list]))
+println(&quot;─&quot;^(28 + 14 * length(pathogen_list)))
+
+for loc_id in loc_names_sorted
+    loc_name = locations[loc_id].s
+    print(rpad(loc_name[1:min(27, length(loc_name))], 28))
+    for (_, pnode) in pathogen_list
+        n = count(r -&gt; r[3] === pnode &amp;&amp; r[4] == loc_id, case_records)
+        cell = n == 0 ? &quot;  ·&quot; : &quot;  $(repeat(&quot;█&quot;, n)) $n&quot;
+        print(rpad(cell, 14))
+    end
+    println()
+end</code></pre><pre><code class="nohighlight hljs">Location                    Influenza     SARS-CoV-2    RSV-B         
+──────────────────────────────────────────────────────────────────────
+Sunrise Care Home             ████ 4        ·             ·           
+Meadowbrook Care Home         ██ 2          ·             ·           
+General Hospital              █ 1           ██████ 6      ·           
+Oakfield Primary School       ·             ·             ███ 3       
+Royal Infirmary               █ 1           ████ 4        ██ 2        
+Riverside Academy             █ 1           ·             █ 1</code></pre><h2 id="13.-Chapter-Distribution"><a class="docs-heading-anchor" href="#13.-Chapter-Distribution">13. Chapter Distribution</a><a id="13.-Chapter-Distribution-1"></a><a class="docs-heading-anchor-permalink" href="#13.-Chapter-Distribution" title="Permalink"></a></h2><p>SST chapters provide a natural typing system. The distribution of nodes across chapters reveals the knowledge graph’s structure.</p><pre><code class="language-julia hljs">chap_counts = Dict{String,Int}()
+for (_, node) in store.nodes
+    chap_counts[node.chap] = get(chap_counts, node.chap, 0) + 1
+end
+
+println(&quot;Chapter distribution:&quot;)
+for (chap, count) in sort(collect(chap_counts), by=x -&gt; -x.second)
+    bar = &quot;█&quot;^min(count, 40)
+    println(&quot;  $(rpad(chap, 25)) $bar $count&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Chapter distribution:
+  case reports              █████████████████████████ 25
+  patients                  █████████████████████████ 25
+  timeline                  █████████████ 13
+  symptoms                  ███████████ 11
+  risk factors              ████████ 8
+  locations                 ██████ 6
+  demographics              █████ 5
+  pathogen taxonomy         █████ 5
+  pathogens                 ███ 3
+  location types            ███ 3
+  pathogen properties       ███ 3
+  clinical                  ███ 3
+  outbreaks                 ███ 3
+  interventions             ██ 2</code></pre><h2 id="14.-Graph-Statistics"><a class="docs-heading-anchor" href="#14.-Graph-Statistics">14. Graph Statistics</a><a id="14.-Graph-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#14.-Graph-Statistics" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Full graph adjacency matrix
+adj_full = SemanticSpacetime.AdjacencyMatrix()
+for (nptr, node) in store.nodes
+    for links in node.incidence
+        for link in links
+            SemanticSpacetime.add_edge!(adj_full, nptr, link.dst, Float64(link.wgt))
+        end
+    end
+end
+
+println(graph_summary(adj_full))</code></pre><pre><code class="nohighlight hljs">Graph Summary
+─────────────
+  Nodes:   115
+  Links:   678 (directed)
+  Sources: 0
+  Sinks:   0
+  Top centrality:
+    (1,8)  1.0000
+    (1,7)  0.6577
+    (3,22)  0.4876
+    (3,37)  0.4785
+    (3,1)  0.4667</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>This vignette demonstrated how <strong>SemanticSpacetime.jl</strong> naturally models epidemiological knowledge using its spacetime type system:</p><table><tr><th style="text-align: right">SST Feature</th><th style="text-align: right">Epidemiological Application</th></tr><tr><td style="text-align: right"><strong>Chapters</strong></td><td style="text-align: right">Entity typing: patients, pathogens, locations, symptoms</td></tr><tr><td style="text-align: right"><strong>LEADSTO arrows</strong> (<code>then</code>)</td><td style="text-align: right">Causal transmission chains, temporal ordering</td></tr><tr><td style="text-align: right"><strong>CONTAINS arrows</strong> (<code>contain</code>, <code>has-pt</code>)</td><td style="text-align: right">Location containment, symptom membership, outbreak grouping</td></tr><tr><td style="text-align: right"><strong>EXPRESS arrows</strong> (<code>note</code>)</td><td style="text-align: right">Metadata: onset dates, severity, vaccination status</td></tr><tr><td style="text-align: right"><strong>NEAR arrows</strong> (<code>ll</code>)</td><td style="text-align: right">Contact tracing (spatial proximity without causation)</td></tr><tr><td style="text-align: right"><strong>Forward/backward cones</strong></td><td style="text-align: right">Contact tracing chains (analogue of SPARQL property paths)</td></tr><tr><td style="text-align: right"><strong>Path finding</strong></td><td style="text-align: right">Transmission chain reconstruction</td></tr><tr><td style="text-align: right"><strong>Eigenvector centrality</strong></td><td style="text-align: right">Super-spreader identification</td></tr><tr><td style="text-align: right"><strong>Weighted search</strong></td><td style="text-align: right">Risk propagation through the network</td></tr><tr><td style="text-align: right"><strong>Text search</strong></td><td style="text-align: right">Syndromic surveillance queries</td></tr><tr><td style="text-align: right"><strong>Adjacency analysis</strong></td><td style="text-align: right">Sources (index cases), sinks (endpoints), degree distribution</td></tr></table><h3 id="SST-vs-RDF-for-Epidemiology"><a class="docs-heading-anchor" href="#SST-vs-RDF-for-Epidemiology">SST vs RDF for Epidemiology</a><a id="SST-vs-RDF-for-Epidemiology-1"></a><a class="docs-heading-anchor-permalink" href="#SST-vs-RDF-for-Epidemiology" title="Permalink"></a></h3><p>The SST approach differs from RDF in several key ways:</p><ul><li><strong>No separate ontology language</strong>: The arrow type system (LEADSTO, CONTAINS, EXPRESS, NEAR) provides built-in semantics without needing OWL declarations.</li><li><strong>Spacetime semantics</strong>: The distinction between causal arrows (LEADSTO) and proximity arrows (NEAR) maps directly to the epidemiological distinction between transmission (causal) and contact (spatial).</li><li><strong>Graph-native queries</strong>: Instead of SPARQL, SST uses forward/backward cones, weighted search, and path finding — operations optimised for knowledge graph traversal.</li><li><strong>Chapters as types</strong>: Chapter membership provides lightweight typing without the overhead of class hierarchies.</li></ul><p>Key epidemiological findings from the scenario:</p><ul><li><strong>Influenza A H3N2</strong> clustered in care homes (4 cases at Sunrise Care Home alone), with severe outcomes among elderly patients with comorbidities.</li><li><strong>SARS-CoV-2 JN.1</strong> formed a nosocomial chain at General Hospital (P004→P009→P013→P016→P020) amplified by healthcare worker contacts.</li><li><strong>RSV-B</strong> primarily affected children in school settings, with two severe paediatric cases requiring hospitalisation.</li><li><strong>Network centrality</strong> identified P001 and P009 as key nodes in the transmission network, consistent with their roles as index cases in the care home and hospital clusters respectively.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../14-maze-solving/">« Maze Solving</a><a class="docs-footer-nextpage" href="../16-ecological-causal-inference/">Ecological Causal Inference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Monday 15 June 2026 19:40">Monday 15 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

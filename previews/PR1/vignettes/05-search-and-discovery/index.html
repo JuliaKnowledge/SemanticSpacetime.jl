@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Search And Discovery · SemanticSpacetime.jl</title><meta name="title" content="Search And Discovery · SemanticSpacetime.jl"/><meta property="og:title" content="Search And Discovery · SemanticSpacetime.jl"/><meta property="twitter:title" content="Search And Discovery · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/05-search-and-discovery/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/05-search-and-discovery/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/05-search-and-discovery/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li class="is-active"><a class="tocitem" href>Search And Discovery</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Building-a-Sample-Graph"><span>Building a Sample Graph</span></a></li><li><a class="tocitem" href="#Exact-Name-Lookup"><span>Exact Name Lookup</span></a></li><li><a class="tocitem" href="#Text-Substring-Search"><span>Text Substring Search</span></a></li><li><a class="tocitem" href="#Search-with-Inhibition-Context"><span>Search with Inhibition Context</span></a></li><li><a class="tocitem" href="#Checking-Inhibition-Matches"><span>Checking Inhibition Matches</span></a></li><li><a class="tocitem" href="#Decoding-Search-Parameters"><span>Decoding Search Parameters</span></a></li><li><a class="tocitem" href="#Navigating-from-Search-Results"><span>Navigating from Search Results</span></a></li><li><a class="tocitem" href="#Searching-Across-Chapters"><span>Searching Across Chapters</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li><a class="tocitem" href="../10-real-world-examples/">Real World Examples</a></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li><li><a class="tocitem" href="../17-reminders-and-assets/">Reminders And Assets</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Search And Discovery</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Search And Discovery</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Search-and-Discovery"><a class="docs-heading-anchor" href="#Search-and-Discovery">Search and Discovery</a><a id="Search-and-Discovery-1"></a><a class="docs-heading-anchor-permalink" href="#Search-and-Discovery" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>Once a knowledge graph is populated, we need to <em>find things</em> in it. SemanticSpacetime.jl provides several search mechanisms — from exact name lookup to text substring matching and context-filtered search with inhibition. This vignette demonstrates these capabilities.</p><h2 id="Building-a-Sample-Graph"><a class="docs-heading-anchor" href="#Building-a-Sample-Graph">Building a Sample Graph</a><a id="Building-a-Sample-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Building-a-Sample-Graph" title="Permalink"></a></h2><p>Let’s build a graph about a software ecosystem to search through:</p><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+# Register arrows
+then_f = insert_arrow!(&quot;LEADSTO&quot;, &quot;then&quot;, &quot;leads to&quot;, &quot;+&quot;)
+then_b = insert_arrow!(&quot;LEADSTO&quot;, &quot;prev&quot;, &quot;preceded by&quot;, &quot;-&quot;)
+insert_inverse_arrow!(then_f, then_b)
+has_f = insert_arrow!(&quot;CONTAINS&quot;, &quot;has&quot;, &quot;contains&quot;, &quot;+&quot;)
+has_b = insert_arrow!(&quot;CONTAINS&quot;, &quot;in&quot;, &quot;is in&quot;, &quot;-&quot;)
+insert_inverse_arrow!(has_f, has_b)
+note_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;note&quot;, &quot;has note&quot;, &quot;+&quot;)
+eg_arr = insert_arrow!(&quot;EXPRESS&quot;, &quot;e.g.&quot;, &quot;has example&quot;, &quot;+&quot;)
+like_arr = insert_arrow!(&quot;NEAR&quot;, &quot;like&quot;, &quot;is similar to&quot;, &quot;+&quot;)
+
+store = MemoryStore()
+
+# Languages chapter
+julia = mem_vertex!(store, &quot;Julia language&quot;, &quot;languages&quot;)
+python = mem_vertex!(store, &quot;Python language&quot;, &quot;languages&quot;)
+rust = mem_vertex!(store, &quot;Rust language&quot;, &quot;languages&quot;)
+go_lang = mem_vertex!(store, &quot;Go language&quot;, &quot;languages&quot;)
+mem_edge!(store, julia, &quot;like&quot;, python, [&quot;scientific-computing&quot;])
+mem_edge!(store, rust, &quot;like&quot;, go_lang, [&quot;systems-programming&quot;])
+
+# Packages chapter
+flux = mem_vertex!(store, &quot;Flux.jl machine learning&quot;, &quot;packages&quot;)
+plots = mem_vertex!(store, &quot;Plots.jl visualization&quot;, &quot;packages&quot;)
+dataframes = mem_vertex!(store, &quot;DataFrames.jl tabular data&quot;, &quot;packages&quot;)
+http = mem_vertex!(store, &quot;HTTP.jl web server&quot;, &quot;packages&quot;)
+mem_edge!(store, julia, &quot;has&quot;, flux, [&quot;machine-learning&quot;])
+mem_edge!(store, julia, &quot;has&quot;, plots, [&quot;visualization&quot;])
+mem_edge!(store, julia, &quot;has&quot;, dataframes, [&quot;data-science&quot;])
+mem_edge!(store, julia, &quot;has&quot;, http, [&quot;web&quot;])
+
+# Concepts chapter
+jit = mem_vertex!(store, &quot;just-in-time compilation&quot;, &quot;concepts&quot;)
+gc = mem_vertex!(store, &quot;garbage collection&quot;, &quot;concepts&quot;)
+dispatch = mem_vertex!(store, &quot;multiple dispatch&quot;, &quot;concepts&quot;)
+mem_edge!(store, julia, &quot;note&quot;, jit, [&quot;compiler&quot;])
+mem_edge!(store, julia, &quot;note&quot;, dispatch, [&quot;type-system&quot;])
+mem_edge!(store, python, &quot;note&quot;, gc, [&quot;runtime&quot;])
+mem_edge!(store, go_lang, &quot;note&quot;, gc, [&quot;runtime&quot;])
+
+# Workflows chapter
+train = mem_vertex!(store, &quot;train model&quot;, &quot;workflows&quot;)
+evaluate = mem_vertex!(store, &quot;evaluate model&quot;, &quot;workflows&quot;)
+deploy = mem_vertex!(store, &quot;deploy model&quot;, &quot;workflows&quot;)
+mem_edge!(store, train, &quot;then&quot;, evaluate, [&quot;ml-pipeline&quot;])
+mem_edge!(store, evaluate, &quot;then&quot;, deploy, [&quot;ml-pipeline&quot;])
+mem_edge!(store, flux, &quot;note&quot;, train, [&quot;machine-learning&quot;])
+
+println(&quot;Graph: $(node_count(store)) nodes, $(link_count(store)) links&quot;)
+println(&quot;Chapters: &quot;, join(sort(mem_get_chapters(store)), &quot;, &quot;))</code></pre><pre><code class="nohighlight hljs">Graph: 14 nodes, 19 links
+Chapters: concepts, languages, packages, workflows</code></pre><h2 id="Exact-Name-Lookup"><a class="docs-heading-anchor" href="#Exact-Name-Lookup">Exact Name Lookup</a><a id="Exact-Name-Lookup-1"></a><a class="docs-heading-anchor-permalink" href="#Exact-Name-Lookup" title="Permalink"></a></h2><p>The simplest search — find nodes by their exact name:</p><pre><code class="language-julia hljs">results = mem_get_nodes_by_name(store, &quot;Julia language&quot;)
+for n in results
+    println(&quot;Found: &#39;$(n.s)&#39; in chapter &#39;$(n.chap)&#39;&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Found: &#39;Julia language&#39; in chapter &#39;languages&#39;</code></pre><pre><code class="language-julia hljs"># Non-existent name returns empty
+results = mem_get_nodes_by_name(store, &quot;nonexistent&quot;)
+println(&quot;Found $(length(results)) results for &#39;nonexistent&#39;&quot;)</code></pre><pre><code class="nohighlight hljs">Found 0 results for &#39;nonexistent&#39;</code></pre><h2 id="Text-Substring-Search"><a class="docs-heading-anchor" href="#Text-Substring-Search">Text Substring Search</a><a id="Text-Substring-Search-1"></a><a class="docs-heading-anchor-permalink" href="#Text-Substring-Search" title="Permalink"></a></h2><p><code>mem_search_text</code> finds nodes whose text contains the query as a substring (case-insensitive):</p><pre><code class="language-julia hljs">println(&quot;Search for &#39;language&#39;:&quot;)
+for n in mem_search_text(store, &quot;language&quot;)
+    println(&quot;  &#39;$(n.s)&#39; [$(n.chap)]&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Search for &#39;language&#39;:
+  &#39;Rust language&#39; [languages]
+  &#39;Go language&#39; [languages]
+  &#39;Python language&#39; [languages]
+  &#39;Julia language&#39; [languages]</code></pre><pre><code class="language-julia hljs">println(&quot;Search for &#39;model&#39;:&quot;)
+for n in mem_search_text(store, &quot;model&quot;)
+    println(&quot;  &#39;$(n.s)&#39; [$(n.chap)]&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Search for &#39;model&#39;:
+  &#39;evaluate model&#39; [workflows]
+  &#39;deploy model&#39; [workflows]
+  &#39;train model&#39; [workflows]</code></pre><pre><code class="language-julia hljs">println(&quot;Search for &#39;jl&#39;:&quot;)
+for n in mem_search_text(store, &quot;jl&quot;)
+    println(&quot;  &#39;$(n.s)&#39; [$(n.chap)]&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Search for &#39;jl&#39;:
+  &#39;HTTP.jl web server&#39; [packages]
+  &#39;DataFrames.jl tabular data&#39; [packages]
+  &#39;Plots.jl visualization&#39; [packages]
+  &#39;Flux.jl machine learning&#39; [packages]</code></pre><h2 id="Search-with-Inhibition-Context"><a class="docs-heading-anchor" href="#Search-with-Inhibition-Context">Search with Inhibition Context</a><a id="Search-with-Inhibition-Context-1"></a><a class="docs-heading-anchor-permalink" href="#Search-with-Inhibition-Context" title="Permalink"></a></h2><p>Inhibition contexts allow you to filter search results by including or excluding specific context tags. This is inspired by Promise Theory’s notion of <em>conditional promises</em> — you see only what is relevant to your current perspective.</p><pre><code class="language-julia hljs"># Parse an inhibition context: include &quot;machine-learning&quot;, exclude nothing
+ic_ml = parse_inhibition_context(&quot;machine-learning&quot;)
+println(&quot;Include: $(ic_ml.include)&quot;)
+println(&quot;Exclude: $(ic_ml.exclude)&quot;)</code></pre><pre><code class="nohighlight hljs">Include: [&quot;machine-learning&quot;]
+Exclude: String[]</code></pre><pre><code class="language-julia hljs"># Search with the inhibition context
+results = search_with_inhibition(store, &quot;Julia&quot;, ic_ml)
+println(&quot;Results for &#39;Julia&#39; in machine-learning context:&quot;)
+for n in results
+    println(&quot;  &#39;$(n.s)&#39; [$(n.chap)]&quot;)
+end</code></pre><pre><code class="nohighlight hljs">Results for &#39;Julia&#39; in machine-learning context:
+  &#39;Julia language&#39; [languages]</code></pre><pre><code class="language-julia hljs"># Exclude a context: include &quot;runtime&quot;, exclude &quot;compiler&quot;
+ic_runtime = parse_inhibition_context(&quot;runtime NOT compiler&quot;)
+println(&quot;Include: $(ic_runtime.include)&quot;)
+println(&quot;Exclude: $(ic_runtime.exclude)&quot;)</code></pre><pre><code class="nohighlight hljs">Include: [&quot;runtime&quot;]
+Exclude: [&quot;compiler&quot;]</code></pre><h2 id="Checking-Inhibition-Matches"><a class="docs-heading-anchor" href="#Checking-Inhibition-Matches">Checking Inhibition Matches</a><a id="Checking-Inhibition-Matches-1"></a><a class="docs-heading-anchor-permalink" href="#Checking-Inhibition-Matches" title="Permalink"></a></h2><p>The <code>matches_inhibition</code> function checks whether a context string satisfies an inhibition filter:</p><pre><code class="language-julia hljs">ic = parse_inhibition_context(&quot;web,data-science NOT machine-learning&quot;)
+
+# Test various context strings
+for ctx in [&quot;web&quot;, &quot;data-science&quot;, &quot;machine-learning&quot;, &quot;web,visualization&quot;, &quot;machine-learning,web&quot;]
+    match = matches_inhibition(ctx, ic)
+    println(&quot;  &#39;$ctx&#39; matches: $match&quot;)
+end</code></pre><pre><code class="nohighlight hljs">  &#39;web&#39; matches: false
+  &#39;data-science&#39; matches: false
+  &#39;machine-learning&#39; matches: false
+  &#39;web,visualization&#39; matches: false
+  &#39;machine-learning,web&#39; matches: false</code></pre><h2 id="Decoding-Search-Parameters"><a class="docs-heading-anchor" href="#Decoding-Search-Parameters">Decoding Search Parameters</a><a id="Decoding-Search-Parameters-1"></a><a class="docs-heading-anchor-permalink" href="#Decoding-Search-Parameters" title="Permalink"></a></h2><p>The <code>decode_search_field</code> function parses a natural-language search query into structured parameters:</p><pre><code class="language-julia hljs">sp = SemanticSpacetime.decode_search_field(&quot;sequence about gravity in physics limit 10&quot;)
+println(&quot;Names: $(sp.names)&quot;)
+println(&quot;Chapter: $(sp.chapter)&quot;)
+println(&quot;Sequence only: $(sp.seq_only)&quot;)
+println(&quot;Limit: $(sp.limit)&quot;)</code></pre><pre><code class="nohighlight hljs">Names: [&quot;gravity&quot;]
+Chapter: physics
+Sequence only: true
+Limit: 10</code></pre><pre><code class="language-julia hljs">sp2 = SemanticSpacetime.decode_search_field(&quot;machine learning&quot;)
+println(&quot;Names: $(sp2.names)&quot;)</code></pre><pre><code class="nohighlight hljs">Names: [&quot;machine&quot;, &quot;learning&quot;]</code></pre><h2 id="Navigating-from-Search-Results"><a class="docs-heading-anchor" href="#Navigating-from-Search-Results">Navigating from Search Results</a><a id="Navigating-from-Search-Results-1"></a><a class="docs-heading-anchor-permalink" href="#Navigating-from-Search-Results" title="Permalink"></a></h2><p>Search results return <code>Node</code> objects, which carry their full incidence structure. You can follow links from any search result:</p><pre><code class="language-julia hljs"># Find Julia and explore its connections
+julia_nodes = mem_get_nodes_by_name(store, &quot;Julia language&quot;)
+if !isempty(julia_nodes)
+    julia_node = julia_nodes[1]
+    println(&quot;Connections from &#39;$(julia_node.s)&#39;:&quot;)
+
+    channel_names = [&quot;-EXPRESS&quot;, &quot;-CONTAINS&quot;, &quot;-LEADSTO&quot;, &quot;NEAR&quot;,
+                     &quot;+LEADSTO&quot;, &quot;+CONTAINS&quot;, &quot;+EXPRESS&quot;]
+    for (i, links) in enumerate(julia_node.incidence)
+        for link in links
+            dst = mem_get_node(store, link.dst)
+            arr = get_arrow_by_ptr(link.arr)
+            if dst !== nothing
+                println(&quot;  [$(channel_names[i])] —($(arr.short))→ &#39;$(dst.s)&#39;&quot;)
+            end
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Connections from &#39;Julia language&#39;:
+  [NEAR] —(like)→ &#39;Python language&#39;
+  [+CONTAINS] —(has)→ &#39;Flux.jl machine learning&#39;
+  [+CONTAINS] —(has)→ &#39;Plots.jl visualization&#39;
+  [+CONTAINS] —(has)→ &#39;DataFrames.jl tabular data&#39;
+  [+CONTAINS] —(has)→ &#39;HTTP.jl web server&#39;
+  [+EXPRESS] —(note)→ &#39;just-in-time compilation&#39;
+  [+EXPRESS] —(note)→ &#39;multiple dispatch&#39;</code></pre><h2 id="Searching-Across-Chapters"><a class="docs-heading-anchor" href="#Searching-Across-Chapters">Searching Across Chapters</a><a id="Searching-Across-Chapters-1"></a><a class="docs-heading-anchor-permalink" href="#Searching-Across-Chapters" title="Permalink"></a></h2><p>Since <code>mem_search_text</code> searches across all chapters, you can discover cross-domain connections:</p><pre><code class="language-julia hljs">println(&quot;Nodes mentioning &#39;compilation&#39; or &#39;collection&#39;:&quot;)
+for query in [&quot;compilation&quot;, &quot;collection&quot;, &quot;dispatch&quot;]
+    results = mem_search_text(store, query)
+    for n in results
+        println(&quot;  &#39;$(n.s)&#39; [$(n.chap)]&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Nodes mentioning &#39;compilation&#39; or &#39;collection&#39;:
+  &#39;just-in-time compilation&#39; [concepts]
+  &#39;garbage collection&#39; [concepts]
+  &#39;multiple dispatch&#39; [concepts]</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>SemanticSpacetime.jl provides multiple search strategies:</p><table><tr><th style="text-align: right">Method</th><th style="text-align: right">Use Case</th></tr><tr><td style="text-align: right"><code>mem_get_nodes_by_name</code></td><td style="text-align: right">Exact name lookup</td></tr><tr><td style="text-align: right"><code>mem_search_text</code></td><td style="text-align: right">Substring matching across all nodes</td></tr><tr><td style="text-align: right"><code>search_with_inhibition</code></td><td style="text-align: right">Context-filtered search</td></tr><tr><td style="text-align: right"><code>parse_inhibition_context</code></td><td style="text-align: right">Parse include/exclude filter strings</td></tr><tr><td style="text-align: right"><code>decode_search_field</code></td><td style="text-align: right">Natural-language query parsing</td></tr></table><p>The combination of text search and context-based inhibition gives you both broad discovery and focused, perspective-aware queries — a key feature of the SST approach to knowledge management.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../04-n4l-language/">« N4l Language</a><a class="docs-footer-nextpage" href="../06-graph-analysis/">Graph Analysis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Monday 15 June 2026 19:40">Monday 15 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

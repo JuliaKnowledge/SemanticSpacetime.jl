@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Real World Examples · SemanticSpacetime.jl</title><meta name="title" content="Real World Examples · SemanticSpacetime.jl"/><meta property="og:title" content="Real World Examples · SemanticSpacetime.jl"/><meta property="twitter:title" content="Real World Examples · SemanticSpacetime.jl"/><meta name="description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:description" content="Documentation for SemanticSpacetime.jl."/><meta property="twitter:description" content="Documentation for SemanticSpacetime.jl."/><meta property="og:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/10-real-world-examples/"/><meta property="twitter:url" content="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/10-real-world-examples/"/><link rel="canonical" href="https://JuliaKnowledge.github.io/SemanticSpacetime.jl/vignettes/10-real-world-examples/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SemanticSpacetime.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Guide</span><ul><li><a class="tocitem" href="../../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../../storage/">Storage Backends</a></li><li><a class="tocitem" href="../../n4l/">N4L Language</a></li><li><a class="tocitem" href="../../search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../graph_analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li></ul></li><li><span class="tocitem">Vignettes</span><ul><li><a class="tocitem" href="../01-getting-started/">Getting Started</a></li><li><a class="tocitem" href="../02-sst-types/">Sst Types</a></li><li><a class="tocitem" href="../03-building-graphs/">Building Graphs</a></li><li><a class="tocitem" href="../04-n4l-language/">N4l Language</a></li><li><a class="tocitem" href="../05-search-and-discovery/">Search And Discovery</a></li><li><a class="tocitem" href="../06-graph-analysis/">Graph Analysis</a></li><li><a class="tocitem" href="../07-paths-and-cones/">Paths And Cones</a></li><li><a class="tocitem" href="../08-rdf-integration/">Rdf Integration</a></li><li><a class="tocitem" href="../09-api-examples/">Api Examples</a></li><li class="is-active"><a class="tocitem" href>Real World Examples</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Example-1:-Mary-Had-a-Little-Lamb"><span>Example 1: Mary Had a Little Lamb</span></a></li><li><a class="tocitem" href="#Example-2:-Double-Slit-Interference-(doors.n4l)"><span>Example 2: Double-Slit Interference (doors.n4l)</span></a></li><li><a class="tocitem" href="#Example-3:-Astronomy-Poem"><span>Example 3: Astronomy Poem</span></a></li><li><a class="tocitem" href="#Example-4:-Friends-and-Fiends-(Social-Network)"><span>Example 4: Friends and Fiends (Social Network)</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../11-promise-theory/">Promise Theory</a></li><li><a class="tocitem" href="../12-music-collection/">Music Collection</a></li><li><a class="tocitem" href="../13-text-analysis/">Text Analysis</a></li><li><a class="tocitem" href="../14-maze-solving/">Maze Solving</a></li><li><a class="tocitem" href="../15-epidemiology/">Epidemiology</a></li><li><a class="tocitem" href="../16-ecological-causal-inference/">Ecological Causal Inference</a></li><li><a class="tocitem" href="../17-reminders-and-assets/">Reminders And Assets</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/types/">Types &amp; Constants</a></li><li><a class="tocitem" href="../../api/stores/">Storage</a></li><li><a class="tocitem" href="../../api/arrows_contexts/">Arrows &amp; Contexts</a></li><li><a class="tocitem" href="../../api/graph/">Graph Analysis</a></li><li><a class="tocitem" href="../../api/search/">Search &amp; Paths</a></li><li><a class="tocitem" href="../../api/n4l/">N4L</a></li><li><a class="tocitem" href="../../api/rdf/">RDF Integration</a></li><li><a class="tocitem" href="../../api/text/">Text Analysis</a></li><li><a class="tocitem" href="../../api/visualization/">Visualization</a></li><li><a class="tocitem" href="../../api/server/">HTTP Server</a></li><li><a class="tocitem" href="../../api/utilities/">Utilities</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Vignettes</a></li><li class="is-active"><a href>Real World Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Real World Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaKnowledge/SemanticSpacetime.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Real-World-N4L-Examples"><a class="docs-heading-anchor" href="#Real-World-N4L-Examples">Real-World N4L Examples</a><a id="Real-World-N4L-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Real-World-N4L-Examples" title="Permalink"></a></h1><p>Simon Frost</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>The SSTorytime project ships with a rich collection of N4L example files covering domains from poetry to physics. This vignette loads, compiles, and analyses four of these real-world examples, demonstrating the full parse→compile→analyse pipeline.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SemanticSpacetime
+
+SemanticSpacetime.reset_arrows!()
+SemanticSpacetime.reset_contexts!()
+
+const SST_CONFIG = joinpath(@__DIR__, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;SSTorytime&quot;, &quot;SSTconfig&quot;)
+const EXAMPLES = joinpath(@__DIR__, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;SSTorytime&quot;, &quot;examples&quot;)
+println(&quot;Config available: &quot;, isdir(SST_CONFIG))
+println(&quot;Examples available: &quot;, isdir(EXAMPLES))</code></pre><pre><code class="nohighlight hljs">Config available: true
+Examples available: true</code></pre><h2 id="Example-1:-Mary-Had-a-Little-Lamb"><a class="docs-heading-anchor" href="#Example-1:-Mary-Had-a-Little-Lamb">Example 1: Mary Had a Little Lamb</a><a id="Example-1:-Mary-Had-a-Little-Lamb-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1:-Mary-Had-a-Little-Lamb" title="Permalink"></a></h2><p>The <code>Mary.n4l</code> file uses N4L’s sequence mode to tell the classic nursery rhyme, with annotations and cross-references.</p><pre><code class="language-julia hljs">mary_text = read(joinpath(EXAMPLES, &quot;Mary.n4l&quot;), String)
+println(&quot;--- Mary.n4l ---&quot;)
+println(strip(mary_text))</code></pre><pre><code class="nohighlight hljs">--- Mary.n4l ---
+-high brow poetry about Mary
+
+ +:: _sequence_ , Mary had a little lamb, poem ::   // starting sequence mode
+
+@title Mary had a little lamb  (note) Had means possessed not gave birth to
+              &quot;                (written by) Mary&#39;s mum
+
+       Whose fleece was white as snow
+       And everywhere that Mary went
+
+       // no need to be contiguous
+
+       The lamb was sure to go        (note) SatNav invented later
+
+ -:: _sequence_ ::          // ending sequence mode
+
+ $title.1 (is an example of) Nursery rhyme</code></pre><pre><code class="language-julia hljs">store1 = MemoryStore()
+try
+    cr1 = compile_n4l_string!(store1, mary_text; config_dir=SST_CONFIG)
+    println(&quot;Nodes: $(cr1.nodes_created), Edges: $(cr1.edges_created)&quot;)
+    println(&quot;Chapters: &quot;, join(cr1.chapters, &quot;, &quot;))
+catch e
+    println(&quot;Compilation note: &quot;, e)
+end
+
+println(&quot;\nGraph: $(node_count(store1)) nodes, $(link_count(store1)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Nodes: 9, Edges: 9
+Chapters: high brow poetry about Mary
+
+Graph: 9 nodes, 18 links</code></pre><p>Explore the compiled graph:</p><pre><code class="language-julia hljs">for name in [&quot;Mary had a little lamb&quot;, &quot;Whose fleece was white as snow&quot;, &quot;Nursery rhyme&quot;]
+    nodes = mem_get_nodes_by_name(store1, name)
+    if !isempty(nodes)
+        println(&quot;Found: &#39;$(nodes[1].s)&#39; in chapter &#39;$(nodes[1].chap)&#39;&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Found: &#39;Mary had a little lamb&#39; in chapter &#39;high brow poetry about Mary&#39;
+Found: &#39;Whose fleece was white as snow&#39; in chapter &#39;high brow poetry about Mary&#39;
+Found: &#39;Nursery rhyme&#39; in chapter &#39;high brow poetry about Mary&#39;</code></pre><h2 id="Example-2:-Double-Slit-Interference-(doors.n4l)"><a class="docs-heading-anchor" href="#Example-2:-Double-Slit-Interference-(doors.n4l)">Example 2: Double-Slit Interference (doors.n4l)</a><a id="Example-2:-Double-Slit-Interference-(doors.n4l)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2:-Double-Slit-Interference-(doors.n4l)" title="Permalink"></a></h2><p>The <code>doors.n4l</code> file models a multi-slit interference pattern — multiple paths from “start” through doors/ports/holes/gates to targets.</p><pre><code class="language-julia hljs">doors_text = read(joinpath(EXAMPLES, &quot;doors.n4l&quot;), String)
+println(&quot;--- doors.n4l ---&quot;)
+println(strip(doors_text))</code></pre><pre><code class="nohighlight hljs">--- doors.n4l ---
+- multi slit interference
+
+ :: physics, connectivity, path example ::
+
+start  (fwd) door
+    &quot;  (fwd) port
+    &quot;  (fwd) hole
+    &quot;  (fwd) gate
+
+door (fwd) passage
+  &quot;  (fwd) road
+  &quot;  (fwd) river
+
+port (fwd) river
+  &quot;  (fwd) tram
+
+hole (fwd) tram
+
+gate (fwd) tram
+  &quot;  (fwd) bike
+
+passage (fwd) target 1
+road    (fwd) target 2
+
+river  (fwd) target 3
+tram   (fwd)  &quot;
+bike   (fwd)   &quot;</code></pre><pre><code class="language-julia hljs">store2 = MemoryStore()
+try
+    cr2 = compile_n4l_string!(store2, doors_text; config_dir=SST_CONFIG)
+    println(&quot;Nodes: $(cr2.nodes_created), Edges: $(cr2.edges_created)&quot;)
+catch e
+    println(&quot;Compilation note: &quot;, e)
+end
+
+println(&quot;Graph: $(node_count(store2)) nodes, $(link_count(store2)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Nodes: 13, Edges: 17
+Graph: 13 nodes, 34 links</code></pre><p>Trace paths from start to targets using cone search and path solving:</p><pre><code class="language-julia hljs">start_nodes = mem_get_nodes_by_name(store2, &quot;start&quot;)
+if !isempty(start_nodes)
+    cone = forward_cone(store2, start_nodes[1].nptr; depth=5)
+    println(&quot;Forward cone from &#39;start&#39;: $(length(cone.supernodes)) supernodes&quot;)
+    for nptr in cone.supernodes
+        node = mem_get_node(store2, nptr)
+        if node !== nothing
+            println(&quot;  → &#39;$(node.s)&#39;&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Forward cone from &#39;start&#39;: 10 supernodes
+  → &#39;door&#39;
+  → &#39;port&#39;
+  → &#39;hole&#39;
+  → &#39;gate&#39;
+  → &#39;passage&#39;
+  → &#39;road&#39;
+  → &#39;river&#39;
+  → &#39;tram&#39;
+  → &#39;bike&#39;
+  → &#39;target 3&#39;</code></pre><pre><code class="language-julia hljs">for target_name in [&quot;target 1&quot;, &quot;target 2&quot;, &quot;target 3&quot;]
+    targets = mem_get_nodes_by_name(store2, target_name)
+    if !isempty(start_nodes) &amp;&amp; !isempty(targets)
+        result = find_paths(store2, start_nodes[1].nptr, targets[1].nptr; max_depth=6)
+        println(&quot;Paths to &#39;$target_name&#39;: $(length(result.paths)) DAG, $(length(result.loops)) loops&quot;)
+        for (i, path) in enumerate(result.paths)
+            names = [mem_get_node(store2, p).s for p in path if mem_get_node(store2, p) !== nothing]
+            println(&quot;  Path $i: &quot;, join(names, &quot; → &quot;))
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Paths to &#39;target 1&#39;: 1 DAG, 0 loops
+  Path 1: start → door → passage → target 1
+Paths to &#39;target 2&#39;: 1 DAG, 0 loops
+  Path 1: start → door → road → target 2
+Paths to &#39;target 3&#39;: 6 DAG, 0 loops
+  Path 1: start → door → river → target 3
+  Path 2: start → port → river → target 3
+  Path 3: start → port → tram → target 3
+  Path 4: start → hole → tram → target 3
+  Path 5: start → gate → tram → target 3
+  Path 6: start → gate → bike → target 3</code></pre><h2 id="Example-3:-Astronomy-Poem"><a class="docs-heading-anchor" href="#Example-3:-Astronomy-Poem">Example 3: Astronomy Poem</a><a id="Example-3:-Astronomy-Poem-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3:-Astronomy-Poem" title="Permalink"></a></h2><p>The <code>astronomy.n4l</code> file is a playful poem with number-word substitutions and annotations. It demonstrates EXPRESS arrows for commentary.</p><pre><code class="language-julia hljs">astro_text = read(joinpath(EXAMPLES, &quot;astronomy.n4l&quot;), String)
+
+store3 = MemoryStore()
+try
+    cr3 = compile_n4l_string!(store3, astro_text; config_dir=SST_CONFIG)
+    println(&quot;Nodes: $(cr3.nodes_created), Edges: $(cr3.edges_created)&quot;)
+    println(&quot;Chapters: &quot;, join(cr3.chapters, &quot;, &quot;))
+catch e
+    println(&quot;Compilation note: &quot;, e)
+end
+
+println(&quot;Graph: $(node_count(store3)) nodes, $(link_count(store3)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Nodes: 27, Edges: 27
+Chapters: Astronomy by the numbers poem
+Graph: 27 nodes, 54 links</code></pre><p>Compute eigenvector centrality to find the most connected concepts:</p><pre><code class="language-julia hljs">adj = SemanticSpacetime.AdjacencyMatrix()
+for (nptr, node) in store3.nodes
+    for links in node.incidence
+        for link in links
+            SemanticSpacetime.add_edge!(adj, nptr, link.dst, Float64(link.wgt))
+        end
+    end
+end
+
+if !isempty(adj.nodes)
+    centrality = eigenvector_centrality(adj; max_iter=100, tol=1e-6)
+    ranked = sort(collect(centrality), by=x -&gt; x.second, rev=true)
+    println(&quot;Top nodes by eigenvector centrality:&quot;)
+    for (nptr, score) in ranked[1:min(8, length(ranked))]
+        node = mem_get_node(store3, nptr)
+        if node !== nothing
+            println(&quot;  $(rpad(node.s[1:min(40,length(node.s))], 42)) $(round(score, digits=4))&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Top nodes by eigenvector centrality:
+  The Moon affects the sur5 heard            1.0
+  Moon                                       0.9578
+  By law of phy6 great                       0.659
+  And makes a year 4 you                     0.6394
+  We soon should come to 0                   0.5564
+  Astronomy                                  0.5143
+  It7 when the stars so bright               0.4253
+  sur5 becomes &quot;surf I&#39;ve&quot;                   0.3939</code></pre><h2 id="Example-4:-Friends-and-Fiends-(Social-Network)"><a class="docs-heading-anchor" href="#Example-4:-Friends-and-Fiends-(Social-Network)">Example 4: Friends and Fiends (Social Network)</a><a id="Example-4:-Friends-and-Fiends-(Social-Network)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4:-Friends-and-Fiends-(Social-Network)" title="Permalink"></a></h2><p>The <code>FriendsAndFiends.n4l</code> file encodes a social network with friend links and employer relationships.</p><pre><code class="language-julia hljs">friends_text = read(joinpath(EXAMPLES, &quot;FriendsAndFiends.n4l&quot;), String)
+println(&quot;--- FriendsAndFiends.n4l ---&quot;)
+println(strip(friends_text))</code></pre><pre><code class="nohighlight hljs">--- FriendsAndFiends.n4l ---
+- friend network
+
+Mark (fr)  Mandy 
+  &quot;  (fr)  Silvy
+  &quot;  (fr)  Brent
+  &quot;  (fr)  Zhao
+  &quot;  (fr)  Doug
+  &quot;  (fr)  Tore
+  &quot;  (fr)  Joyce
+  &quot;  (fr)  Mike
+  &quot;  (fr)  Carol
+  &quot;  (fr)  Ali
+  &quot;  (fr)  Matt
+  &quot;  (fr)  Bjørn
+  &quot;  (fr)  Tamar
+  &quot;  (fr)  Kat
+  &quot;  (fr)  Hans
+
+
+Mike (fr) Mark
+  &quot;  (fr) Jane1
+  &quot;  (fr) Jane2
+  &quot;  (fr) Jan
+  &quot;  (fr) Alfie
+  &quot;  (fr) Jungi
+  &quot;  (fr) Peter
+  &quot;  (fr) Paul
+
+Jan  (fr) Adam 
+  &quot;  (fr) Jane1
+  &quot;  (fr) Jane
+
+
+Adam (fr) Company of Friends
+  &quot;  (fr) Paul
+  &quot;  (fr) Matt
+  &quot;  (fr) Billie
+  &quot;  (fr) Chirpy Cheep Cheep
+  &quot;  (fr) Taylor Swallow
+
+
+Company of Friends (empl-of) Robo1 
+         &quot;         (empl-of) Robo2
+         &quot;         (empl-of) Bot1
+         &quot;         (empl-of) Bot2
+         &quot;         (empl-of) Bot3
+         &quot;         (empl-of) Bot4
+         &quot;         (empl-of) Rob1Bot21</code></pre><pre><code class="language-julia hljs">store4 = MemoryStore()
+try
+    cr4 = compile_n4l_string!(store4, friends_text; config_dir=SST_CONFIG)
+    println(&quot;Nodes: $(cr4.nodes_created), Edges: $(cr4.edges_created)&quot;)
+catch e
+    println(&quot;Compilation note: &quot;, e)
+end
+
+println(&quot;Graph: $(node_count(store4)) nodes, $(link_count(store4)) links&quot;)</code></pre><pre><code class="nohighlight hljs">Nodes: 36, Edges: 39
+Graph: 36 nodes, 78 links</code></pre><p>Analyse the social network structure:</p><pre><code class="language-julia hljs">adj4 = SemanticSpacetime.AdjacencyMatrix()
+for (nptr, node) in store4.nodes
+    for links in node.incidence
+        for link in links
+            SemanticSpacetime.add_edge!(adj4, nptr, link.dst, Float64(link.wgt))
+        end
+    end
+end
+
+println(graph_summary(adj4))</code></pre><pre><code class="nohighlight hljs">Graph Summary
+─────────────
+  Nodes:   36
+  Links:   76 (directed)
+  Sources: 0
+  Sinks:   0
+  Top centrality:
+    (1,1)  1.0000
+    (1,9)  0.7829
+    (1,12)  0.2828
+    (1,19)  0.2696
+    (1,4)  0.2364</code></pre><pre><code class="language-julia hljs"># Find the most connected individuals
+if !isempty(adj4.nodes)
+    centrality4 = eigenvector_centrality(adj4; max_iter=100, tol=1e-6)
+    ranked4 = sort(collect(centrality4), by=x -&gt; x.second, rev=true)
+    println(&quot;Most central people in the network:&quot;)
+    for (nptr, score) in ranked4[1:min(10, length(ranked4))]
+        node = mem_get_node(store4, nptr)
+        if node !== nothing
+            println(&quot;  $(rpad(node.s, 25)) $(round(score, digits=4))&quot;)
+        end
+    end
+end</code></pre><pre><code class="nohighlight hljs">Most central people in the network:
+  Mark                      1.0
+  Mike                      0.7829
+  Matt                      0.2828
+  Jan                       0.2696
+  Brent                     0.2364
+  Bjørn                     0.2364
+  Kat                       0.2364
+  Mandy                     0.2364
+  Carol                     0.2364
+  Zhao                      0.2364</code></pre><p>Find sources and sinks in the social graph:</p><pre><code class="language-julia hljs">sources = find_sources(adj4)
+sinks = find_sinks(adj4)
+println(&quot;Sources (only give, never receive): $(length(sources))&quot;)
+for nptr in sources[1:min(5, length(sources))]
+    node = mem_get_node(store4, nptr)
+    if node !== nothing
+        println(&quot;  &#39;$(node.s)&#39;&quot;)
+    end
+end
+
+println(&quot;Sinks (only receive, never give): $(length(sinks))&quot;)
+for nptr in sinks[1:min(5, length(sinks))]
+    node = mem_get_node(store4, nptr)
+    if node !== nothing
+        println(&quot;  &#39;$(node.s)&#39;&quot;)
+    end
+end</code></pre><pre><code class="nohighlight hljs">Sources (only give, never receive): 0
+Sinks (only receive, never give): 0</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>Real-world N4L files demonstrate the full SST pipeline:</p><table><tr><th style="text-align: right">Step</th><th style="text-align: right">Function</th></tr><tr><td style="text-align: right">Load</td><td style="text-align: right"><code>read(path, String)</code></td></tr><tr><td style="text-align: right">Compile</td><td style="text-align: right"><code>compile_n4l_string!(store, text; config_dir=...)</code></td></tr><tr><td style="text-align: right">Explore</td><td style="text-align: right"><code>forward_cone</code>, <code>find_paths</code></td></tr><tr><td style="text-align: right">Analyse</td><td style="text-align: right"><code>eigenvector_centrality</code>, <code>find_sources</code>, <code>find_sinks</code></td></tr></table><p>The N4L format handles poetry, physics models, and social networks with the same lightweight syntax.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../09-api-examples/">« Api Examples</a><a class="docs-footer-nextpage" href="../11-promise-theory/">Promise Theory »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Monday 15 June 2026 19:40">Monday 15 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
