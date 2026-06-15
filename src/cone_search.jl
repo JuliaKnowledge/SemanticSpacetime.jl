@@ -277,10 +277,12 @@ function _query_link_paths(sst::SSTConnection, qstr::AbstractString)
     paths = Vector{Link}[]
     try
         result = execute_sql_strict(sst, qstr)
-        for row in LibPQ.Columns(result)
-            whole = string(row[1])
-            parsed = _parse_link_paths(whole)
-            append!(paths, parsed)
+        ct = LibPQ.columntable(result)
+        if !isempty(ct)
+            for v in ct[1]
+                parsed = _parse_link_paths(string(v))
+                append!(paths, parsed)
+            end
         end
     catch e
         @warn "Cone search query failed" query=qstr exception=e

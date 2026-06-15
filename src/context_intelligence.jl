@@ -49,13 +49,40 @@ end
 # ──────────────────────────────────────────────────────────────────
 
 """
+    context_intent_analysis(spectrum::Dict{String,Int})
+
+Split a frequency spectrum of context fragments into mutually exclusive
+intentional (appears `< 3` times) and ambient (`>= 3` times) lists. Used for
+table-of-contents generation. Faithful port of Go `ContextIntentAnalysis`.
+Returns (intentional::Vector{String}, ambient::Vector{String}).
+"""
+function context_intent_analysis(spectrum::Dict{String,Int})
+    INTENT_LIMIT = 3
+    intentional = String[]
+    ambient = String[]
+    for (f, count) in spectrum
+        if count < INTENT_LIMIT
+            push!(intentional, f)
+        else
+            push!(ambient, f)
+        end
+    end
+    return (intentional, ambient)
+end
+
+"""
     context_intent_analysis(spectrum::Dict{String,Int}, clusters::Vector{String})
 
-Separate intentional (low frequency < 3) from ambient fragments.
+Separate intentional (low frequency < 3) from ambient fragments, additionally
+pruning and re-diffing clusters. Does not mutate its arguments.
 Returns (intentional::Vector{String}, ambient::Vector{String}).
 """
 function context_intent_analysis(spectrum::Dict{String,Int}, clusters::Vector{String})
     INTENT_LIMIT = 3
+
+    # Work on copies so callers' inputs are not mutated.
+    spectrum = copy(spectrum)
+    clusters = copy(clusters)
 
     intentional = String[]
     for (f, count) in spectrum

@@ -181,6 +181,10 @@ function create_schema!(sst::SSTConnection)
     execute_sql(sst, SQL_LINK_TYPE)
     execute_sql(sst, SQL_APPOINTMENT_TYPE)
 
+    # Create sst_unaccent first: the Node table's UnSearch generated column
+    # references it, so it must exist before the table is created.
+    execute_sql(sst, SQL_SST_UNACCENT)
+
     # Create tables
     execute_sql(sst, SQL_NODE_TABLE)
     execute_sql(sst, SQL_PAGEMAP_TABLE)
@@ -189,8 +193,7 @@ function create_schema!(sst::SSTConnection)
     execute_sql(sst, SQL_LASTSEEN_TABLE)
     execute_sql(sst, SQL_CONTEXT_DIRECTORY_TABLE)
 
-    # Create stored functions
-    execute_sql(sst, SQL_SST_UNACCENT)
+    # Create remaining stored functions (these reference the tables above)
     execute_sql(sst, SQL_IDEMP_INSERT_CONTEXT)
     execute_sql(sst, SQL_IDEMP_APPEND_NODE)
 

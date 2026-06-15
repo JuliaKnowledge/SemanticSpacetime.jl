@@ -68,13 +68,19 @@ function split_into_para_sentences(text::AbstractString)::Vector{Vector{Vector{S
         cleaned = Vector{Vector{String}}()
 
         for sent in sentences
+            isempty(strip(sent)) && continue
             frags = split_punctuation_text(sent)
             codons = String[]
             for f in frags
                 content = strip(f)
-                length(content) > 2 && push!(codons, String(content))
+                # Go gates on byte length (len(content) > 2); use ncodeunits
+                # for matching behaviour on multibyte UTF-8 fragments.
+                ncodeunits(content) > 2 && push!(codons, String(content))
             end
-            !isempty(codons) && push!(cleaned, codons)
+            # Retain the sentence even when no fragments survive (Go keeps it
+            # whenever the raw sentence text is non-empty) so that downstream
+            # sentence indices stay aligned with the source.
+            push!(cleaned, codons)
         end
 
         !isempty(cleaned) && push!(result, cleaned)
@@ -84,29 +90,70 @@ function split_into_para_sentences(text::AbstractString)::Vector{Vector{Vector{S
 end
 
 """
+    sanitize_sentence(s::AbstractString) -> String
+
+Repair a sentence with an unbalanced double-quote count by appending a closing
+quote. Faithful port of Go `SanitizeSentence`.
+"""
+function sanitize_sentence(s::AbstractString)::String
+    str = String(s)
+    if count(==('"'), str) % 2 != 0
+        str *= "\""
+    end
+    return str
+end
+
+"""
     split_sentences_para(para::AbstractString) -> Vector{String}
 
-Split a paragraph into sentences on sentence-ending punctuation followed by whitespace.
-Merges short fragments (< 10 chars) with the next sentence.
+Split a paragraph into sentences. Faithful port of Go `SplitSentences`:
+newlines/tabs are normalised to spaces and smart quotes folded to ASCII;
+short paragraphs (`< 100` bytes) are kept whole; longer paragraphs are split on
+`!`, `.` and `。` only when outside any quoted span and the accumulated
+sentence already exceeds `20` characters. `?` is deliberately not a split point.
 """
 function split_sentences_para(para::AbstractString)::Vector{String}
-    small_string = 10
-    # Insert delimiter after sentence-ending punctuation followed by whitespace
-    marked = replace(String(para), r"([?!.。])([ \n\t])" => s"\1\2#")
-    parts = split(marked, "#")
+    min_sentence = 20    # characters
+    min_paragraph = 100  # bytes
+
+    s = String(para)
+    s = replace(s, '\n' => ' ')
+    s = replace(s, '\t' => ' ')
+    s = replace(s, NON_ASCII_LQUOTE => '"')
+    s = replace(s, NON_ASCII_RQUOTE => '"')
+    s = replace(s, '`' => '\'')
+    s = replace(s, '’' => '\'')  # right single quotation mark
+    s = strip(s)
 
     sentences = String[]
-    buf = ""
-    for (i, part) in enumerate(parts)
-        if i < length(parts) && length(part) < small_string
-            buf *= String(part)
-            continue
-        end
-        buf *= String(part)
-        buf = replace(buf, '\n' => ' ')
-        push!(sentences, buf)
-        buf = ""
+
+    if ncodeunits(s) < min_paragraph
+        isempty(s) || push!(sentences, sanitize_sentence(s))
+        return sentences
     end
+
+    # Quote-nesting-aware split: only break on sentence enders at depth zero.
+    extract = Char[]
+    dlevel = 0
+    slevel = 0
+    for rval in s
+        push!(extract, rval)
+        if rval == '\''
+            slevel = slevel == 0 ? 1 : 0
+        elseif rval == '"'
+            dlevel = dlevel == 0 ? 1 : 0
+        elseif rval == '!' || rval == '.' || rval == '。'
+            if slevel == 0 && dlevel == 0 && length(extract) > min_sentence
+                push!(sentences, sanitize_sentence(String(extract)))
+                extract = Char[]
+            end
+        end
+    end
+
+    if !isempty(extract)
+        push!(sentences, sanitize_sentence(String(extract)))
+    end
+
     return sentences
 end
 

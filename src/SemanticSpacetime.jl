@@ -8,6 +8,7 @@ using LinearAlgebra
 import JSON3
 import LibPQ
 import DBInterface
+import CairoMakie
 using Genie
 
 # Core types and constants
@@ -185,7 +186,9 @@ export
 
     # Node directory functions
     new_node_directory, append_text_to_directory!,
-    check_existing_or_alt_caps, get_node_txt_from_ptr,
+    check_existing, check_existing_or_alt_caps,
+    different_caps, near_equiv!, check_alt_caps!, complete_caps_inferences!,
+    get_node_txt_from_ptr,
     get_memory_node_from_ptr, n_channel,
     update_seq_status!,
 

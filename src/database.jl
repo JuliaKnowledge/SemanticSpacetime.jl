@@ -134,11 +134,12 @@ function load_arrows_from_db!(sst::SSTConnection)
     result = LibPQ.execute(sst.conn,
         "SELECT STAindex, Long, Short, ArrPtr FROM ArrowDirectory ORDER BY ArrPtr")
 
-    for row in LibPQ.Columns(result)
-        stindex = row[1]::Int32 |> Int
-        long    = row[2]::String
-        short   = row[3]::String
-        ptr     = row[4]::Int32 |> Int
+    ct = LibPQ.columntable(result)
+    for r in 1:(isempty(ct) ? 0 : length(ct[1]))
+        stindex = Int(ct[1][r])
+        long    = String(ct[2][r])
+        short   = String(ct[3][r])
+        ptr     = Int(ct[4][r])
 
         entry = ArrowEntry(stindex, long, short, ptr)
 
@@ -158,9 +159,10 @@ function load_arrows_from_db!(sst::SSTConnection)
     result2 = LibPQ.execute(sst.conn,
         "SELECT Plus, Minus FROM ArrowInverses ORDER BY Plus")
 
-    for row in LibPQ.Columns(result2)
-        fwd = row[1]::Int32 |> Int
-        bwd = row[2]::Int32 |> Int
+    ct2 = LibPQ.columntable(result2)
+    for r in 1:(isempty(ct2) ? 0 : length(ct2[1]))
+        fwd = Int(ct2[1][r])
+        bwd = Int(ct2[2][r])
         _INVERSE_ARROWS[fwd] = bwd
         _INVERSE_ARROWS[bwd] = fwd
     end
@@ -177,9 +179,10 @@ function load_contexts_from_db!(sst::SSTConnection)
     result = LibPQ.execute(sst.conn,
         "SELECT Context, CtxPtr FROM ContextDirectory ORDER BY CtxPtr")
 
-    for row in LibPQ.Columns(result)
-        ctx = row[1]::String
-        ptr = row[2]::Int32 |> Int
+    ct = LibPQ.columntable(result)
+    for r in 1:(isempty(ct) ? 0 : length(ct[1]))
+        ctx = String(ct[1][r])
+        ptr = Int(ct[2][r])
 
         entry = ContextEntry(ctx, ptr)
 
@@ -205,9 +208,9 @@ end
 
 Execute a SQL statement, ignoring errors (for idempotent CREATE operations).
 """
-function execute_sql(sst::SSTConnection, sql::AbstractString)
+function execute_sql(conn::LibPQ.Connection, sql::AbstractString)
     try
-        LibPQ.execute(sst.conn, sql)
+        LibPQ.execute(conn, sql)
     catch e
         # Silently ignore "already exists" type errors
         msg = string(e)
@@ -218,11 +221,14 @@ function execute_sql(sst::SSTConnection, sql::AbstractString)
     nothing
 end
 
+# Accept either an SSTConnection or a raw LibPQ.Connection (callers use both).
+execute_sql(sst::SSTConnection, sql::AbstractString) = execute_sql(sst.conn, sql)
+
 """
     execute_sql_strict(sst::SSTConnection, sql::AbstractString) -> LibPQ.Result
+    execute_sql_strict(conn::LibPQ.Connection, sql::AbstractString) -> LibPQ.Result
 
 Execute a SQL statement, propagating errors.
 """
-function execute_sql_strict(sst::SSTConnection, sql::AbstractString)
-    return LibPQ.execute(sst.conn, sql)
-end
+execute_sql_strict(conn::LibPQ.Connection, sql::AbstractString) = LibPQ.execute(conn, sql)
+execute_sql_strict(sst::SSTConnection, sql::AbstractString) = execute_sql_strict(sst.conn, sql)

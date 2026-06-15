@@ -123,12 +123,13 @@ function build_adjacency(sst::SSTConnection; arrows::Vector{ArrowPtr}=ArrowPtr[]
 
     arrow_set = isempty(arrows) ? nothing : Set(arrows)
 
-    for row in LibPQ.Columns(result)
-        src = parse_nodeptr(string(row[1]))
+    ct = LibPQ.columntable(result)
+    for r in 1:(isempty(ct) ? 0 : length(ct[1]))
+        src = parse_nodeptr(string(ct[1][r]))
         push!(adj.nodes, src)
 
         for (idx, stindex) in enumerate(1:ST_TOP)
-            col_val = row[1 + stindex]
+            col_val = ct[1 + stindex][r]
             if isnothing(col_val) || ismissing(col_val)
                 continue
             end

@@ -16,14 +16,13 @@ const ST_COLORS = Dict(
      3 => :red,       # +EXPRESS
 )
 
-# Check if CairoMakie is available
+# CairoMakie is a hard dependency, imported at module scope. Checking
+# `isdefined` (rather than a lazy `@eval import`) avoids a world-age hazard
+# where the freshly-imported module's methods were not visible to the same
+# dynamic call that triggered the import — which made the first plot call in a
+# session fail with a spurious MethodError.
 function _has_cairomakie()
-    try
-        @eval import CairoMakie
-        return true
-    catch
-        return false
-    end
+    return isdefined(@__MODULE__, :CairoMakie)
 end
 
 const _CAIROMAKIE_AVAILABLE = Ref{Union{Bool,Nothing}}(nothing)

@@ -41,6 +41,7 @@ using SemanticSpacetime
     include("test_sql_utils.jl")
     include("test_db_store.jl")
     include("test_macros.jl")
+    include("test_visualization.jl")
     include("test_todo_features3.jl")
     include("test_todo_features2.jl")
     include("test_todo_features.jl")
