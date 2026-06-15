@@ -160,7 +160,7 @@ The following vignettes provide worked examples and in-depth guides. Each is ava
 | 5 | [Search and Discovery](vignettes/05-search-and-discovery/05-search-and-discovery.md) | Text search, node resolution, and query parameters |
 | 6 | [Graph Analysis](vignettes/06-graph-analysis/06-graph-analysis.md) | Sources, sinks, cycles, centrality, and adjacency matrices |
 | 7 | [Paths and Cones](vignettes/07-paths-and-cones/07-paths-and-cones.md) | Path solving, causal cones, and weighted shortest paths |
-| 8 | [RDF Integration](vignettes/08-rdf-integration/08-rdf-integration.md) | Importing and exporting RDF triples |
+| 8 | [RDF Integration](vignettes/08-rdf-integration/08-rdf-integration.md) | Importing and exporting a minimal Turtle subset (in-memory store) |
 | 9 | [API Examples](vignettes/09-api-examples/09-api-examples.md) | Common API usage patterns and recipes |
 | 10 | [Real-World Examples](vignettes/10-real-world-examples/10-real-world-examples.md) | Production use cases and domain modelling |
 | 11 | [Promise Theory](vignettes/11-promise-theory/11-promise-theory.md) | Modelling promises and obligations as SST graphs |

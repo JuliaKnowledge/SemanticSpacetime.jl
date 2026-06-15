@@ -83,27 +83,57 @@
         @test retrieved.chap == "ch1"
     end
 
-    @testset "check_existing_or_alt_caps" begin
+    @testset "check_existing (exact match only)" begin
         nd = new_node_directory()
         n1 = Node("Hello", "ch1")
         append_text_to_directory!(nd, n1)
 
         # Exact match
         n2 = Node("Hello", "ch2")
-        cptr, found = check_existing_or_alt_caps(nd, n2)
+        cptr, found = check_existing(nd, n2)
         @test found
         @test cptr == 1
 
-        # Alt caps (should warn and return existing)
+        # Alternative capitalization is now a DISTINCT node (not merged) —
+        # variants get linked as NEAR via check_alt_caps! instead.
         n3 = Node("hello", "ch3")
-        cptr2, found2 = check_existing_or_alt_caps(nd, n3)
-        @test found2
-        @test cptr2 == 1
+        _, found2 = check_existing(nd, n3)
+        @test !found2
+
+        # Backwards-compatible alias points at the same exact-match function
+        _, found2b = check_existing_or_alt_caps(nd, n3)
+        @test !found2b
 
         # Not found
         n4 = Node("World", "ch4")
-        _, found3 = check_existing_or_alt_caps(nd, n4)
+        _, found3 = check_existing(nd, n4)
         @test !found3
+    end
+
+    @testset "different_caps and check_alt_caps! (NEAR linking)" begin
+        SemanticSpacetime.reset_arrows!()
+        SemanticSpacetime.reset_contexts!()
+        add_mandatory_arrows!()
+
+        nd = new_node_directory()
+        p1 = append_text_to_directory!(nd, Node("Hello", "ch1"))
+        p2 = append_text_to_directory!(nd, Node("hello", "ch2"))
+        # Distinct nodes
+        @test p1 != p2
+
+        @test different_caps(Node("Hello"), Node("hello"))
+        @test !different_caps(Node("Hello"), Node("Hello"))
+        @test !different_caps(Node("Hello"), Node("Goodbye"))
+
+        complete_caps_inferences!(nd)
+
+        # Both variants should now carry a NEAR "caps" link to each other
+        caps_arr = get_arrow_by_name("caps").ptr
+        near_idx = SemanticSpacetime.sttype_to_index(Int(NEAR))
+        n1 = get_memory_node_from_ptr(nd, p1)
+        n2 = get_memory_node_from_ptr(nd, p2)
+        @test any(l -> l.arr == caps_arr && l.dst == p2, n1.incidence[near_idx])
+        @test any(l -> l.arr == caps_arr && l.dst == p1, n2.incidence[near_idx])
     end
 
     @testset "idemp_add_chapter_seq_to_node!" begin

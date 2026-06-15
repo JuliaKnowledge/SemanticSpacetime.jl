@@ -35,9 +35,13 @@ mutable struct NodeDirectory
     n3directory::Vector{Node}
     n3_top::ClassedNodePtr
 
-    # Linear search for longer strings
+    # LT128 is hash-mapped too (upstream moved it out of linear search:
+    # the original power-law use-case stats no longer applied).
+    lt128grams::Dict{String, ClassedNodePtr}
     lt128::Vector{Node}
     lt128_top::ClassedNodePtr
+
+    # Linear search for the rare longer strings
     lt1024::Vector{Node}
     lt1024_top::ClassedNodePtr
     gt1024::Vector{Node}
@@ -54,7 +58,7 @@ function new_node_directory()
         Dict{String, ClassedNodePtr}(), Node[], 0,
         Dict{String, ClassedNodePtr}(), Node[], 0,
         Dict{String, ClassedNodePtr}(), Node[], 0,
-        Node[], 0,
+        Dict{String, ClassedNodePtr}(), Node[], 0,
         Node[], 0,
         Node[], 0,
     )
@@ -81,7 +85,7 @@ function _get_directory(nd::NodeDirectory, class::Int)
     class == N1GRAM && return (nd.n1directory, nd.n1grams)
     class == N2GRAM && return (nd.n2directory, nd.n2grams)
     class == N3GRAM && return (nd.n3directory, nd.n3grams)
-    class == LT128  && return (nd.lt128, nothing)
+    class == LT128  && return (nd.lt128, nd.lt128grams)
     class == LT1024 && return (nd.lt1024, nothing)
     class == GT1024 && return (nd.gt1024, nothing)
     error("Invalid text size class: $class")
@@ -136,56 +140,116 @@ function linear_find_text(nodes::Vector{Node}, event::Node; ignore_caps::Bool=fa
 end
 
 # ──────────────────────────────────────────────────────────────────
-# Check for existing or alternative capitalizations
+# Existence check (exact match only)
 # ──────────────────────────────────────────────────────────────────
 
 """
-    check_existing_or_alt_caps(nd::NodeDirectory, event::Node) -> (ClassedNodePtr, Bool)
+    check_existing(nd::NodeDirectory, event::Node) -> (ClassedNodePtr, Bool)
 
-Check if a node with the same text (or different capitalization) already exists.
-Returns (pointer, found). Logs a warning if an alternative capitalization exists.
+Check whether a node with the *exact* same text already exists.
+Returns (pointer, found). Faithful port of Go `CheckExisting`: differently
+capitalised variants are NOT treated as the same node here — they are kept
+distinct and linked later as NEAR (see [`check_alt_caps!`](@ref)).
 """
-function check_existing_or_alt_caps(nd::NodeDirectory, event::Node)
+function check_existing(nd::NodeDirectory, event::Node)
     class = n_channel(event.s)
+    dir, grams = _get_directory(nd, class)
 
-    if class <= N3GRAM
-        dir, grams = _get_directory(nd, class)
-        # Exact match
-        if haskey(grams, event.s)
-            return (grams[event.s], true)
-        end
-        # Alt caps check
-        lc = lowercase(event.s)
-        for (k, v) in grams
-            if lowercase(k) == lc && k != event.s
-                @warn "Another capitalization exists: '$(k)' vs '$(event.s)'"
-                return (v, true)
-            end
-        end
-        return (ClassedNodePtr(0), false)
-    else
-        dir, _ = _get_directory(nd, class)
-        # Exact match
-        cptr, found = linear_find_text(dir, event)
-        if found
-            return (cptr, true)
-        end
-        # Alt caps
-        cptr2, found2 = linear_find_text(dir, event; ignore_caps=true)
-        if found2
-            @warn "Another capitalization exists for: '$(event.s)'"
-            return (cptr2, true)
-        end
+    if !isnothing(grams)
+        haskey(grams, event.s) && return (grams[event.s], true)
         return (ClassedNodePtr(0), false)
     end
+
+    # Rare long strings: linear, exact match only
+    return linear_find_text(dir, event)
+end
+
+check_existing(event::Node) = check_existing(_NODE_DIRECTORY[], event)
+
+# Backwards-compatible alias. NOTE: this no longer merges alternative
+# capitalizations — it is exact-match only, matching the upstream split of
+# CheckExistingOrAltCaps into CheckExisting + CheckAltCaps.
+const check_existing_or_alt_caps = check_existing
+
+# ──────────────────────────────────────────────────────────────────
+# Alternative-capitalization NEAR linking
+# ──────────────────────────────────────────────────────────────────
+
+"""
+    different_caps(n1::Node, n2::Node) -> Bool
+
+True when two nodes have the same length but differ only by capitalization
+(identical when lower-cased, but not byte-identical). Port of Go `DifferentCaps`.
+"""
+function different_caps(n1::Node, n2::Node)
+    n1.l != n2.l && return false
+    s1 = n1.s
+    s2 = n2.s
+    return (s1 != s2) && (lowercase(s1) == lowercase(s2))
 end
 
 """
-    check_existing_or_alt_caps(event::Node) -> (ClassedNodePtr, Bool)
+    near_equiv!(nd::NodeDirectory, n1::NodePtr, n2::NodePtr, s1, s2)
 
-Check using the global node directory.
+Link two capitalization variants bidirectionally with the NEAR `"caps"` arrow
+under the `"ambiguous"` context. Port of Go `NearEquiv`.
 """
-check_existing_or_alt_caps(event::Node) = check_existing_or_alt_caps(_NODE_DIRECTORY[], event)
+function near_equiv!(nd::NodeDirectory, n1::NodePtr, n2::NodePtr,
+                     s1::AbstractString, s2::AbstractString)
+    entry = get_arrow_by_name("caps")
+    if isnothing(entry)
+        @warn "caps NEAR arrow not registered; skipping capitalization link " *
+              "(call add_mandatory_arrows! first)"
+        return
+    end
+    ctx = try_context(["ambiguous"])
+    lnk = Link(entry.ptr, 1.0f0, ctx, n2)
+    append_link_to_node!(nd, n1, lnk, n2)
+    lnk2 = Link(entry.ptr, 1.0f0, ctx, n1)
+    append_link_to_node!(nd, n2, lnk2, n1)
+    @warn "A similar capitalization/punctuation exists ($(s1) vs $(s2)) - linking as NEAR"
+end
+
+"""
+    check_alt_caps!(nd::NodeDirectory, event::Node)
+
+Scan the size-class lane of `event` for differently-capitalized variants and
+link each to `event` as NEAR. Port of Go `CheckAltCaps`; intended to run as a
+post-parse pass over the directory.
+"""
+function check_alt_caps!(nd::NodeDirectory, event::Node)
+    class = n_channel(event.s)
+    # Upstream only links variants for the hash-mapped classes (n-grams + LT128).
+    dir, grams = _get_directory(nd, class)
+    isnothing(grams) && return
+    for (key, cptr) in grams
+        n = (1 <= cptr <= length(dir)) ? dir[cptr] : Node()
+        if different_caps(n, event)
+            near_equiv!(nd, NodePtr(class, cptr), event.nptr, key, event.s)
+        end
+    end
+    nothing
+end
+
+check_alt_caps!(event::Node) = check_alt_caps!(_NODE_DIRECTORY[], event)
+
+"""
+    complete_caps_inferences!(nd::NodeDirectory)
+
+Post-parse pass linking all differently-capitalized node variants as NEAR.
+Mirrors the `CheckAltCaps` loop inside Go's `CompleteInferences`.
+"""
+function complete_caps_inferences!(nd::NodeDirectory)
+    for class in (N1GRAM, N2GRAM, N3GRAM, LT128)
+        dir, _ = _get_directory(nd, class)
+        for node in dir
+            check_alt_caps!(nd, node)
+        end
+    end
+    nothing
+end
+
+complete_caps_inferences!() = complete_caps_inferences!(_NODE_DIRECTORY[])
 
 # ──────────────────────────────────────────────────────────────────
 # Append node to directory
@@ -200,7 +264,7 @@ Idempotent — returns existing pointer if text already registered.
 function append_text_to_directory!(nd::NodeDirectory, event::Node)
     class = n_channel(event.s)
 
-    cptr, found = check_existing_or_alt_caps(nd, event)
+    cptr, found = check_existing(nd, event)
     if found
         return NodePtr(class, cptr)
     end

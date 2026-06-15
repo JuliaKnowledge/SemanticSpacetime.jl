@@ -29,8 +29,14 @@ function get_db_node_ptr_matching_name(sst::SSTConnection, name::String, chap::S
     end
 
     result = execute_sql_strict(sst.conn, sql)
-    for row in LibPQ.Columns(result)
-        push!(ptrs, parse_nodeptr(string(row[1])))
+    # LibPQ.columntable returns a NamedTuple of column vectors; the first
+    # column holds every matching NPtr (iterating LibPQ.Columns instead yields
+    # columns, and would silently return only the first match).
+    ct = LibPQ.columntable(result)
+    if !isempty(ct)
+        for v in ct[1]
+            push!(ptrs, parse_nodeptr(string(v)))
+        end
     end
 
     return ptrs
@@ -46,21 +52,27 @@ function get_db_node_by_nodeptr(sst::SSTConnection, nptr::NodePtr)
     sql = "SELECT S, L, Chap, Seq, Im3, Im2, Im1, In0, Il1, Ic2, Ie3 FROM Node WHERE NPtr = '$(np)'::NodePtr"
 
     result = execute_sql_strict(sst.conn, sql)
-    cols = LibPQ.Columns(result)
+    ct = LibPQ.columntable(result)
 
-    if isempty(cols) || isempty(first(cols))
+    # ct[c][r]: column c (1=S,2=L,3=Chap,4=Seq,5..11=Im3..Ie3), row r.
+    if isempty(ct) || isempty(ct[1])
         return Node()
     end
 
-    row = first(cols)
-    node = Node(string(row[1]), string(row[3]))
-    node.l = row[2]::Int32 |> Int
-    node.seq = something(row[4], false)
+    if length(ct[1]) > 1
+        @warn "get_db_node_by_nodeptr returned multiple matches; using the first" nptr count=length(ct[1])
+    end
+
+    # Expand any dynamic in-built functions (e.g. "Dynamic: {TimeSince ...}")
+    # on read, matching Go's GetDBNodeByNodePtr.
+    node = Node(expand_dynamic_functions(string(ct[1][1])), string(ct[3][1]))
+    node.l = Int(ct[2][1])
+    node.seq = something(ct[4][1], false)
     node.nptr = nptr
 
     # Parse link arrays for each ST channel
     for i in 1:ST_TOP
-        col_val = row[4 + i]
+        col_val = ct[4 + i][1]
         if !isnothing(col_val) && !ismissing(col_val)
             node.incidence[i] = parse_link_array(string(col_val))
         end
@@ -83,8 +95,11 @@ function get_db_chapters_matching_name(sst::SSTConnection, src::String)
     sql = "SELECT DISTINCT Chap FROM Node WHERE Chap LIKE '%$(es)%' ORDER BY Chap"
     result = execute_sql_strict(sst.conn, sql)
     chapters = String[]
-    for row in LibPQ.Columns(result)
-        push!(chapters, string(row[1]))
+    ct = LibPQ.columntable(result)
+    if !isempty(ct)
+        for v in ct[1]
+            push!(chapters, string(v))
+        end
     end
     return chapters
 end
@@ -102,14 +117,13 @@ function get_db_context_by_name(sst::SSTConnection, src::String)
     es = sql_escape(src)
     sql = "SELECT DISTINCT Context, CtxPtr FROM ContextDirectory WHERE Context = '$(es)'"
     result = execute_sql_strict(sst.conn, sql)
-    cols = LibPQ.Columns(result)
+    ct = LibPQ.columntable(result)
 
-    if isempty(cols) || isempty(first(cols))
+    if isempty(ct) || isempty(ct[1])
         return ("", ContextPtr(-1))
     end
 
-    row = first(cols)
-    return (string(row[1]), row[2]::Int32 |> Int)
+    return (string(ct[1][1]), Int(ct[2][1]))
 end
 
 """
@@ -120,14 +134,13 @@ Look up a context by pointer. Returns ("", -1) if not found.
 function get_db_context_by_ptr(sst::SSTConnection, ptr::ContextPtr)
     sql = "SELECT Context, CtxPtr FROM ContextDirectory WHERE CtxPtr = $(ptr)"
     result = execute_sql_strict(sst.conn, sql)
-    cols = LibPQ.Columns(result)
+    ct = LibPQ.columntable(result)
 
-    if isempty(cols) || isempty(first(cols))
+    if isempty(ct) || isempty(ct[1])
         return ("", ContextPtr(-1))
     end
 
-    row = first(cols)
-    return (string(row[1]), row[2]::Int32 |> Int)
+    return (string(ct[1][1]), Int(ct[2][1]))
 end
 
 # ──────────────────────────────────────────────────────────────────

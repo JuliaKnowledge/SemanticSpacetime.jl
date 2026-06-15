@@ -58,8 +58,8 @@ function create_db_node!(sst::SSTConnection, n::Node)
     # Get next available pointer for this class
     result = execute_sql_strict(sst.conn,
         "SELECT COALESCE(MAX((NPtr).CPtr), 0) + 1 FROM Node WHERE (NPtr).Chan = $class")
-    row = first(LibPQ.Columns(result))
-    next_cptr = row[1]::Int32 |> Int
+    ct = LibPQ.columntable(result)
+    next_cptr = Int(ct[1][1])
 
     n.nptr = NodePtr(class, next_cptr)
 
@@ -82,13 +82,10 @@ function idemp_db_add_node!(sst::SSTConnection, n::Node)
     # Check if node already exists
     result = execute_sql_strict(sst.conn,
         "SELECT NPtr, L, Chap, Seq FROM Node WHERE S = '$(es)' LIMIT 1")
-    cols = LibPQ.Columns(result)
+    ct = LibPQ.columntable(result)
 
-    if !isempty(cols) && length(first(cols)) > 0
-        row = first(cols)
-        # Parse the NPtr from the result
-        nptr_str = row[1]
-        n.nptr = parse_nodeptr(string(nptr_str))
+    if !isempty(ct) && !isempty(ct[1])
+        n.nptr = parse_nodeptr(string(ct[1][1]))
         return n
     end
 

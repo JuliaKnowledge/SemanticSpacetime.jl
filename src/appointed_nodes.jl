@@ -129,8 +129,9 @@ function get_appointed_nodes_by_arrow(sst::SSTConnection, arrow::Int;
 
     try
         qresult = execute_sql_strict(sst.conn, sql)
-        for row in LibPQ.Columns(qresult)
-            appt = parse_appointed_node_cluster(string(row[1]))
+        ct = LibPQ.columntable(qresult)
+        for v in (isempty(ct) ? () : ct[1])
+            appt = parse_appointed_node_cluster(string(v))
             if appt.arr != 0
                 if !haskey(result, appt.arr)
                     result[appt.arr] = Appointment[]
@@ -165,8 +166,9 @@ function get_appointed_nodes_by_sttype(sst::SSTConnection, sttype::Int;
 
     try
         qresult = execute_sql_strict(sst.conn, sql)
-        for row in LibPQ.Columns(qresult)
-            appt = parse_appointed_node_cluster(string(row[1]))
+        ct = LibPQ.columntable(qresult)
+        for v in (isempty(ct) ? () : ct[1])
+            appt = parse_appointed_node_cluster(string(v))
             if appt.arr != 0
                 if !haskey(result, appt.arr)
                     result[appt.arr] = Appointment[]

@@ -66,9 +66,10 @@ function browse_notes(sst::SSTConnection, chapter::String;
     last_ctx = ""
 
     result = execute_sql_strict(sst, sql)
-    for row in LibPQ.Columns(result)
-        chap = something(row[1], "")
-        ctx_ptr = something(row[3], 0)
+    ct = LibPQ.columntable(result)
+    for r in 1:(isempty(ct) ? 0 : length(ct[1]))
+        chap = something(ct[1][r], "")
+        ctx_ptr = something(ct[3][r], 0)
         ctx_str = ctx_ptr > 0 ? get_context(ctx_ptr) : ""
 
         if chap != last_chap || ctx_str != last_ctx
@@ -83,7 +84,7 @@ function browse_notes(sst::SSTConnection, chapter::String;
             last_ctx = ctx_str
         end
 
-        path_val = row[5]
+        path_val = ct[5][r]
         if !isnothing(path_val) && !ismissing(path_val)
             links = parse_link_array(string(path_val))
             for (j, lnk) in enumerate(links)

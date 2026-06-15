@@ -355,11 +355,16 @@ function node_where_string(name::String, chap::String, context::Vector{String},
         push!(clauses, "lower(Chap) LIKE lower('%$(ec)%')")
     end
 
-    # Name constraint using TSVECTOR search
+    # Name constraint. to_tsquery only accepts single lexemes (no raw spaces),
+    # so multi-word phrases — like explicit wildcards — use a LIKE substring
+    # match; single tokens use full-text search. Mirrors Go's IsStringFragment
+    # routing in NodeWhereString.
     if !isempty(name) && name != "any" && name != "%%"
         en = sql_escape(name)
         if occursin('%', en) || occursin('_', en)
-            push!(clauses, "lower(S) LIKE '$(en)'")
+            push!(clauses, "lower(S) LIKE lower('$(en)')")
+        elseif occursin(' ', strip(en))
+            push!(clauses, "lower(S) LIKE lower('%$(en)%')")
         else
             push!(clauses, "Search @@ to_tsquery('english', '$(en)')")
         end
@@ -386,13 +391,20 @@ function get_db_node_ptr_matching_nccs(sst::SSTConnection, name::String, chap::S
                                        context::Vector{String}, arrows::Vector{ArrowPtr},
                                        seq::Bool, limit::Int)
     where_clause = node_where_string(name, chap, context, arrows, seq)
-    qstr = "SELECT NPtr FROM Node WHERE $(where_clause) ORDER BY L ASC LIMIT $(limit)"
+    # Order alphabetically by node text, then by link cardinality (favouring
+    # richly-connected nodes), matching Go's GetDBNodePtrMatchingNCCS.
+    qstr = "SELECT NPtr FROM Node WHERE $(where_clause) " *
+           "ORDER BY S ASC,(CARDINALITY(Ie3)+CARDINALITY(Im3)+CARDINALITY(Il1)) DESC " *
+           "LIMIT $(limit)"
 
     ptrs = NodePtr[]
     try
         result = execute_sql_strict(sst.conn, qstr)
-        for row in LibPQ.Columns(result)
-            push!(ptrs, parse_nodeptr(string(row[1])))
+        ct = LibPQ.columntable(result)
+        if !isempty(ct)
+            for v in ct[1]
+                push!(ptrs, parse_nodeptr(string(v)))
+            end
         end
     catch e
         @warn "NCCS search failed" query=qstr exception=e
@@ -444,10 +456,13 @@ function search_text(sst::SSTConnection, text::String)
     nodes = Node[]
     try
         result = execute_sql_strict(sst.conn, qstr)
-        for row in LibPQ.Columns(result)
-            nptr = parse_nodeptr(string(row[1]))
-            node = get_db_node_by_nodeptr(sst, nptr)
-            !isempty(node.s) && push!(nodes, node)
+        ct = LibPQ.columntable(result)
+        if !isempty(ct)
+            for v in ct[1]
+                nptr = parse_nodeptr(string(v))
+                node = get_db_node_by_nodeptr(sst, nptr)
+                !isempty(node.s) && push!(nodes, node)
+            end
         end
     catch e
         @warn "Text search failed" text=text exception=e

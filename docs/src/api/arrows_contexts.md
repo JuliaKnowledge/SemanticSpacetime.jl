@@ -39,7 +39,11 @@ normalize_context_string
 ```@docs
 new_node_directory
 append_text_to_directory!
-check_existing_or_alt_caps
+check_existing
+different_caps
+near_equiv!
+check_alt_caps!
+complete_caps_inferences!
 get_node_txt_from_ptr
 get_memory_node_from_ptr
 ```

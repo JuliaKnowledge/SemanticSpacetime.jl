@@ -1360,6 +1360,10 @@ function add_mandatory_arrows!()
     inv = insert_arrow!("properties", "isimg", "is an image for", "-")
     insert_inverse_arrow!(arr, inv)
 
+    # NEAR link used to relate alternative capitalizations of the same text
+    # (see check_alt_caps! / Go NEAR_CAPS_S = "caps").
+    insert_arrow!("nearness", "caps", "capitalization", "+")
+
     # ── Extra arrows needed by SSTorytime/examples/ ──
 
     # ownership.n4l
@@ -1428,6 +1432,52 @@ function add_mandatory_arrows!()
     arr = insert_arrow!("nearness", "cf", "compare with", "+")
     inv = insert_arrow!("nearness", "cf-inv", "compared from", "-")
     insert_inverse_arrow!(arr, inv)
+
+    # ── Vocabulary added upstream (SSTconfig/arrows-*.sst) ──
+
+    # CONTAINS (arrows-CN-2.sst)
+    for (fs, fl, bs, bl) in (
+            ("incl",     "includes",           "is-incl",    "is included in"),
+            ("rel",      "characterises",      "relation",   "relationship kind"),
+            ("haskind",  "has a kind called",  "kind of",    "is a kind of"),
+            ("episode",  "an episode occurred", "happened",  "this happened in/during"),
+            ("decision", "a decision was made", "decided-in", "was decided as part of"),
+            ("work",     "work was done",      "work-in",    "was work done during"))
+        a = insert_arrow!("contains", fs, fl, "+")
+        b = insert_arrow!("contains", bs, bl, "-")
+        insert_inverse_arrow!(a, b)
+    end
+
+    # EXPRESS (arrows-EP-3.sst)
+    for (fs, fl, bs, bl) in (
+            ("born",      "date of birth",      "bday",       "is the birthday of"),
+            ("advisor",   "thesis advisor",     "advisor-for", "was thesis advisor for"),
+            ("year",      "happened in years",  "year-for",   "the years in which"),
+            ("supply",    "has supplier",       "supply-by",  "is the supplier of"),
+            ("source",    "has source",         "source-of",  "the source for"),
+            ("disc",      "discusses",          "is-disc",    "is discussed in"),
+            ("about",     "is about topic/theme", "theme-of", "is the topic/theme of"),
+            ("th-title",  "wrote a thesis with title", "thauthor", "is a thesis title of"),
+            ("wrongabt",  "is wrong about",     "narb",       "is not accurately represented by"),
+            ("expr",      "expresses property", "expr-by",    "is/are expressed by"),
+            ("canex",     "can express",        "isexpr",     "is expressible by"),
+            ("published in", "is published in", "citation",   "is the published citation for"),
+            ("like",      "likes",              "lk-by",      "is liked by"),
+            ("significance", "has a special significance", "siginv", "is a significant reflection"))
+        a = insert_arrow!("express", fs, fl, "+")
+        b = insert_arrow!("express", bs, bl, "-")
+        insert_inverse_arrow!(a, b)
+    end
+
+    # LEADSTO (arrows-LT-1.sst)
+    for (fs, fl, bs, bl) in (
+            ("did",    "did",         "done-by",   "was done by"),
+            ("worked", "worked on",   "work-proj", "was a work project by"),
+            ("result", "results in",  "result-of", "was a result of"))
+        a = insert_arrow!("leadsto", fs, fl, "+")
+        b = insert_arrow!("leadsto", bs, bl, "-")
+        insert_inverse_arrow!(a, b)
+    end
 
     nothing
 end
@@ -1677,6 +1727,10 @@ function parse_n4l(input::String; verbose::Bool=false, config_dir::Union{String,
         end
     end
     parse_n4l_source!(st, src)
+
+    # Completion pass: link differently-capitalized node variants as NEAR
+    # (mirrors CheckAltCaps inside Go's CompleteInferences).
+    complete_caps_inferences!(st.nd)
 
     return N4LResult(copy(st.errors), copy(st.warnings), st.nd, st)
 end

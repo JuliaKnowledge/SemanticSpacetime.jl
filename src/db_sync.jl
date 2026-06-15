@@ -36,11 +36,12 @@ function download_arrows_from_db!(sst::SSTConnection)
     sql = "SELECT STAindex,Long,Short,ArrPtr FROM ArrowDirectory ORDER BY ArrPtr"
     result = execute_sql_strict(sst, sql)
 
-    for row in LibPQ.Columns(result)
-        stindex = row[1]::Int
-        long_name = String(row[2])
-        short_name = String(row[3])
-        ptr = row[4]::Int
+    ct = LibPQ.columntable(result)
+    for r in 1:(isempty(ct) ? 0 : length(ct[1]))
+        stindex = Int(ct[1][r])
+        long_name = String(ct[2][r])
+        short_name = String(ct[3][r])
+        ptr = Int(ct[4][r])
 
         if ptr != _ARROW_DIRECTORY_TOP[]
             @warn "Arrow directory mismatch" ptr _ARROW_DIRECTORY_TOP[]
@@ -57,9 +58,10 @@ function download_arrows_from_db!(sst::SSTConnection)
     sql_inv = "SELECT Plus,Minus FROM ArrowInverses ORDER BY Plus"
     result_inv = execute_sql_strict(sst, sql_inv)
 
-    for row in LibPQ.Columns(result_inv)
-        plus = row[1]::Int
-        minus = row[2]::Int
+    ct_inv = LibPQ.columntable(result_inv)
+    for r in 1:(isempty(ct_inv) ? 0 : length(ct_inv[1]))
+        plus = Int(ct_inv[1][r])
+        minus = Int(ct_inv[2][r])
         _INVERSE_ARROWS[plus] = minus
     end
 
@@ -82,9 +84,10 @@ function download_contexts_from_db!(sst::SSTConnection)
     sql = "SELECT Context,CtxPtr FROM ContextDirectory ORDER BY CtxPtr"
     result = execute_sql_strict(sst, sql)
 
-    for row in LibPQ.Columns(result)
-        context_str = String(row[1])
-        ptr = row[2]::Int
+    ct = LibPQ.columntable(result)
+    for r in 1:(isempty(ct) ? 0 : length(ct[1]))
+        context_str = String(ct[1][r])
+        ptr = Int(ct[2][r])
 
         if ptr != _CONTEXT_TOP[]
             @warn "Context directory mismatch" ptr _CONTEXT_TOP[]
@@ -114,8 +117,9 @@ function synchronize_nptrs!(sst::SSTConnection, store::MemoryStore)
         sql = "SELECT max((Nptr).CPtr) FROM Node WHERE (Nptr).Chan=$(channel)"
         result = execute_sql_strict(sst, sql)
 
-        for row in LibPQ.Columns(result)
-            val = row[1]
+        ct = LibPQ.columntable(result)
+        if !isempty(ct) && !isempty(ct[1])
+            val = ct[1][1]
             if !isnothing(val) && !ismissing(val)
                 cptr = Int(val)
                 if cptr > 0

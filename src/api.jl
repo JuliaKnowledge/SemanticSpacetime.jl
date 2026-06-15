@@ -143,38 +143,53 @@ Upload the entire in-memory graph (from the global node directory)
 to the database. This is typically called after building a graph
 with the N4L compiler.
 """
-function graph_to_db!(sst::SSTConnection; show_progress::Bool=false)
+function graph_to_db!(sst::SSTConnection; show_progress::Bool=false, batch_size::Int=200)
     nd = _NODE_DIRECTORY[]
     total = 0
 
-    # Upload all arrows
-    for arrow in _ARROW_DIRECTORY
-        upload_arrow_to_db!(sst, arrow)
-    end
+    # Wrap the whole upload in a transaction, committing in chunks to bound
+    # transaction size. Autocommit-per-row is dramatically slower in Postgres;
+    # this mirrors the batched upload added upstream ("speed improved
+    # considerably"). The Node table has no unique constraint, so re-inserts do
+    # not abort the transaction.
+    execute_sql_strict(sst, "BEGIN")
+    try
+        # Upload all arrows
+        for arrow in _ARROW_DIRECTORY
+            upload_arrow_to_db!(sst, arrow)
+        end
 
-    # Upload inverse arrow relationships
-    for (fwd, bwd) in _INVERSE_ARROWS
-        upload_inverse_arrow_to_db!(sst, fwd, bwd)
-    end
+        # Upload inverse arrow relationships
+        for (fwd, bwd) in _INVERSE_ARROWS
+            upload_inverse_arrow_to_db!(sst, fwd, bwd)
+        end
 
-    # Upload all contexts
-    upload_contexts_to_db!(sst)
+        # Upload all contexts
+        upload_contexts_to_db!(sst)
 
-    # Upload nodes from each size class
-    for class in [N1GRAM, N2GRAM, N3GRAM, LT128, LT1024, GT1024]
-        dir, _ = _get_directory(nd, class)
-        for node in dir
-            upload_node_to_db!(sst, node)
-            total += 1
-            if show_progress && total % 100 == 0
-                @info "Uploaded $total nodes..."
+        # Upload nodes from each size class
+        for class in [N1GRAM, N2GRAM, N3GRAM, LT128, LT1024, GT1024]
+            dir, _ = _get_directory(nd, class)
+            for node in dir
+                upload_node_to_db!(sst, node)
+                total += 1
+                if total % batch_size == 0
+                    execute_sql_strict(sst, "COMMIT")
+                    execute_sql_strict(sst, "BEGIN")
+                    show_progress && @info "Uploaded $total nodes..."
+                end
             end
         end
-    end
 
-    # Upload page map
-    for pm in _page_map_entries()
-        upload_pagemap_event!(sst, pm)
+        # Upload page map
+        for pm in _page_map_entries()
+            upload_pagemap_event!(sst, pm)
+        end
+
+        execute_sql_strict(sst, "COMMIT")
+    catch e
+        execute_sql(sst, "ROLLBACK")
+        rethrow(e)
     end
 
     show_progress && @info "Upload complete: $total nodes"
